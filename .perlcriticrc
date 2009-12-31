@@ -1,0 +1,5 @@
+severity  = 1
+force     = 0
+verbose   = 5
+theme     = (pbp || security) && bugs
+include   = ProhibitCommentedOutCode ProhibitFlagComments PodSpelling Documentation::RequireEndBeforeLastPod Modules::ProhibitPOSIXimport ValuesAndExpressions::ProhibitEmptyCommas ValuesAndExpressions::ProhibitNullStatements ValuesAndExpressions::ProhibitInterpolationOfLiterals CodeLayout::ProhibitHardTabs Subroutines::ProhibitBuiltinHomonyms CodeLayout::ProhibitHashBarewords Documentation::RequirePodAtEnd InputOutput::ProhibitBarewordFileHandles

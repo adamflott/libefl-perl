@@ -1,0 +1,14 @@
+.perlcriticrc
+common.h
+common.c
+Elementary/Elementary.xs
+Elementary/Makefile.PL
+Evas/Evas.xs
+Evas/Makefile.PL
+lib/EFL.pm
+lib/EFL/Elementary.pm
+lib/EFL/Evas.pm
+Makefile.PL
+MANIFEST
+MANIFEST.SKIP
+typemap
