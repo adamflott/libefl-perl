@@ -315,6 +315,7 @@ my @elm_entry = qw(
   elm_entry_single_line_set
   elm_entry_password_set
   elm_entry_entry_set
+  elm_entry_entry_get
   elm_entry_selection_get
   elm_entry_entry_insert
   elm_entry_line_wrap_set
