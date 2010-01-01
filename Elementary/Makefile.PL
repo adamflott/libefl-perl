@@ -9,9 +9,13 @@ use ExtUtils::PkgConfig;
 my %elm_pkg_info = ExtUtils::PkgConfig->find('elementary');
 
 WriteMakefile(
-    'NAME'          => 'EFL::Elementary',
-    'VERSION_FROM'  => '../lib/EFL/Elementary.pm',
-    'PREREQ_PM'     => {},
+    'NAME'         => 'EFL::Elementary',
+    'VERSION_FROM' => '../lib/EFL/Elementary.pm',
+    'PREREQ_PM'    => {
+        'Carp'          => 0,
+        'XSLoader'      => 0,
+        'Sub::Exporter' => 0,
+    },
     'ABSTRACT_FROM' => '../lib/EFL/Elementary.pm',
     'AUTHOR'        => 'Adam Flott <adam@npjh.com>',
     'LIBS'          => $elm_pkg_info{'libs'},
@@ -28,6 +32,9 @@ if (eval { require ExtUtils::Constant; 1 }) {
     # files to replace their "fallback" counterparts before distributing your
     # changes.
     my @names = (
+        {'name' => 'ELM_FLIP_ROTATE_X_CENTER_AXIS',      'macro' => '1'},
+        {'name' => 'ELM_FLIP_ROTATE_Y_CENTER_AXIS',      'macro' => '1'},
+        {'name' => 'ELM__CENTER_AXIS',                   'macro' => '1'},
         {'name' => 'ELM_GENLIST_ITEM_NONE',              'macro' => '1'},
         {'name' => 'ELM_GENLIST_ITEM_SUBITEMS',          'macro' => '1'},
         {'name' => 'ELM_HOVER_AXIS_BOTH',                'macro' => '1'},

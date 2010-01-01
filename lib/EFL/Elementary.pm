@@ -7,17 +7,34 @@ use warnings;
 
 our $VERSION    = '0.50';
 our $XS_VERSION = $VERSION;
-$VERSION = eval $VERSION;  ## no critic
+$VERSION = eval $VERSION;    ## no critic
 
 use Carp;
 
-require Exporter;
+use Sub::Exporter;
 
-our @ISA = qw(Exporter);
+sub can {
+    my ($class, $name) = @_;
 
-my @elm_constants = qw(
+    return \&{$class . '::' . $name} if (defined(&{$name}));
+
+    return if ($name eq 'constant');
+    my ($error, $val) = constant($name);
+
+    return if ($error);
+    my $sub = sub () { $val };
+
+    {
+        no strict 'refs';    ## no critic
+        *{$class . '::' . $name} = $sub;
+    }
+
+    return $sub;
+}
+
+our @__constants = qw(
   ELM_FLIP_ROTATE_X_CENTER_AXIS
-  ELM_FLIP_ROTATE_Y
+  ELM_FLIP_ROTATE_Y_CENTER_AXIS
   ELM_GENLIST_ITEM_NONE
   ELM_GENLIST_ITEM_SUBITEMS
   ELM_HOVER_AXIS_BOTH
@@ -84,7 +101,6 @@ my @elm_constants = qw(
   ELM_WIN_SPLASH
   ELM_WIN_TOOLBAR
   ELM_WIN_UTILITY
-
 );
 
 my @elm_general = qw(
@@ -98,7 +114,6 @@ my @elm_general = qw(
   elm_quicklaunch_sub_shutdown
   elm_quicklaunch_seed
   elm_quicklaunch_prepare
-  elm_quicklaunch_fork
   elm_quicklaunch_cleanup
   elm_quicklaunch_fallback
   elm_quicklaunch_exe_path_get
@@ -173,7 +188,6 @@ my @elm_win = qw(
   elm_win_sticky_get
   elm_win_keyboard_mode_set
   elm_win_keyboard_win_set
-  elm_win_screen_position_get
   elm_win_inwin_add
   elm_win_inwin_activate
   elm_win_inwin_content_set
@@ -245,7 +259,6 @@ my @elm_scroller = qw(
 my @elm_label = qw(
   elm_label_add
   elm_label_label_set
-  elm_label_label_set
   elm_label_line_wrap_set
 );
 
@@ -297,7 +310,7 @@ my @elm_notify = qw(
   elm_notify_content_set
   elm_notify_orient_set
   elm_notify_timeout_set
-  elm_notify_timer
+  elm_notify_timer_init
   elm_notify_repeat_events_set
   elm_notify_parent_set
 );
@@ -307,7 +320,7 @@ my @elm_hover = qw(
   elm_hover_target_set
   elm_hover_parent_set
   elm_hover_content_set
-  elm_hover_best_content_location_getxo
+  elm_hover_best_content_location_get
 );
 
 my @elm_entry = qw(
@@ -393,7 +406,6 @@ my @elm_hoversel = qw(
   elm_hoversel_hover_begin
   elm_hoversel_hover_end
   elm_hoversel_clear
-  elm_hoversel_items_get
   elm_hoversel_item_add
   elm_hoversel_item_del
   elm_hoversel_item_data_get
@@ -442,20 +454,16 @@ my @elm_menu = qw(
 my @elm_list = qw(
   elm_list_add
   elm_list_item_append
-  elm_list_item_prepend
-  elm_list_item_insert_before
-  elm_list_item_insert_after
   elm_list_clear
   elm_list_go
   elm_list_multi_select_set
   elm_list_horizontal_mode_set
   elm_list_always_select_mode_set
-  elm_list_item_get
   elm_list_items_get
   elm_list_item_selected_set
   elm_list_item_show
   elm_list_item_del
-  elm_list_item_ddel_cb_set
+
   elm_list_item_data_get
   elm_list_item_icon_get
   elm_list_item_icon_set
@@ -484,6 +492,12 @@ my @elm_slider = qw(
   elm_slider_inverted_set
 );
 
+my @elm_genlist = qw(
+  elm_genlist_add
+  elm_genlist_item_append
+
+);
+
 my @elm_check = qw(
   elm_check_add
   elm_check_label_set
@@ -492,7 +506,6 @@ my @elm_check = qw(
   elm_check_icon_get
   elm_check_state_set
   elm_check_state_get
-  elm_check_state_pointer_set
 );
 
 my @elm_radio = qw(
@@ -505,7 +518,7 @@ my @elm_radio = qw(
   elm_radio_state_value_set
   elm_radio_value_set
   elm_radio_value_get
-  elm_radio_value_pointer_set
+
 );
 
 my @elm_pager = qw(
@@ -524,7 +537,7 @@ my @elm_slideshow = qw(
   elm_slideshow_next
   elm_slideshow_previous
   elm_slideshow_transitions_get
-  elm_slideshow_transitions_set
+
   elm_slideshow_timeout_set
   elm_slideshow_timeout_get
   elm_slideshow_loop_set
@@ -540,9 +553,8 @@ my @elm_fileselector = qw(
   elm_fileselector_is_save_set
   elm_fileselector_is_save_get
   elm_fileselector_folder_only_set
-  elm_fileselector_folder_only_get
+
   elm_fileselector_buttons_ok_cancel_set
-  elm_fileselector_buttons_ok_cancel_get
   elm_fileselector_expandable_set
   elm_fileselector_path_set
   elm_fileselector_path_get
@@ -688,87 +700,124 @@ my @elm_scrolled = qw(
   elm_scrolled_entry_scrollbar_policy_set
 );
 
-our %EXPORT_TAGS = (
-    'all' => [
-        @elm_constants, @elm_general, @elm_win, @elm_bg, @elm_icon, @elm_box, @elm_icon, @elm_toggle, @elm_frame, @elm_label,
-        @elm_list, @elm_table, @elm_button, @elm_clock, @elm_layout, @elm_hover, @elm_entry, @elm_scroller, @elm_anchorview, @elm_notepad, @elm_notify, @elm_anchorblock, @elm_bubble, @elm_photo,
-        @elm_toolbar, @elm_menu, @elm_slider, @elm_check, @elm_radio, @elm_slideshow, @elm_fileselector, @elm_progressbar, @elm_separator, @elm_spinner, @elm_index, @elm_photocam, @elm_map,
-        @elm_panel,   @elm_flip, @elm_scrolled,  @elm_pager, @elm_image, @elm_hoversel
-
-    ],
-    'anchorblock'  => \@elm_anchorblock,
-    'anchorview'   => \@elm_anchorview,
-    'bg'           => \@elm_bg,
-    'box'          => \@elm_box,
-    'bubble'       => \@elm_bubble,
-    'button'       => \@elm_button,
-    'check'        => \@elm_check,
-    'clock'        => \@elm_clock,
-    'constants'    => \@elm_constants,
-    'entry'        => \@elm_entry,
-    'fileselector' => \@elm_fileselector,
-    'flip'         => \@elm_flip,
-    'frame'        => \@elm_frame,
-    'general'      => \@elm_general,
-    'hover'        => \@elm_hover,
-    'hoversel'     => \@elm_hoversel,
-    'icon'         => \@elm_icon,
-    'image'        => \@elm_image,
-    'index'        => \@elm_index,
-    'label'        => \@elm_label,
-    'layout'       => \@elm_layout,
-    'list'         => \@elm_list,
-    'map'          => \@elm_map,
-    'menu'         => \@elm_menu,
-    'notepad'      => \@elm_notepad,
-    'notify'       => \@elm_notify,
-    'pager'        => \@elm_pager,
-    'pager'        => \@elm_slideshow,
-    'panel'        => \@elm_panel,
-    'photo'        => \@elm_photo,
-    'photocam'     => \@elm_photocam,
-    'progressbar'  => \@elm_progressbar,
-    'radio'        => \@elm_radio,
-    'scrolled'     => \@elm_scrolled,
-    'scroller'     => \@elm_scroller,
-    'separator'    => \@elm_separator,
-    'slider'       => \@elm_slider,
-    'spinner'      => \@elm_spinner,
-    'table'        => \@elm_table,
-    'toggle'       => \@elm_toggle,
-    'toolbar'      => \@elm_toolbar,
-    'win'          => \@elm_win,
+our @__funcs = (
+    @elm_general,   @elm_win,          @elm_bg,          @elm_icon,      @elm_box,      @elm_toggle, @elm_frame,    @elm_label,      @elm_list,
+    @elm_table,     @elm_button,       @elm_clock,       @elm_layout,    @elm_hover,    @elm_entry,  @elm_scroller, @elm_anchorview, @elm_notepad,
+    @elm_notify,    @elm_anchorblock,  @elm_bubble,      @elm_photo,     @elm_toolbar,  @elm_menu,   @elm_slider,   @elm_check,      @elm_radio,
+    @elm_slideshow, @elm_fileselector, @elm_progressbar, @elm_separator, @elm_spinner,  @elm_index,  @elm_photocam, @elm_map,        @elm_panel,
+    @elm_flip,      @elm_scrolled,     @elm_pager,       @elm_image,     @elm_hoversel, @elm_genlist
 );
 
-our @EXPORT_OK = (@{$EXPORT_TAGS{'all'}});
-our @EXPORT = qw();
+my @__todo = qw(
+  elm_check_state_pointer_set
+  elm_fileselector_buttons_ok_cancel_get
+  elm_fileselector_folder_only_get
+  elm_genlist_always_select_mode_set
+  elm_genlist_at_xy_item_get
+  elm_genlist_bounce_set
+  elm_genlist_clear
+  elm_genlist_compress_mode_set
+  elm_genlist_first_item_get
+  elm_genlist_horizontal_mode_set
+  elm_genlist_item_bring_in
+  elm_genlist_item_data_get
+  elm_genlist_item_data_set
+  elm_genlist_item_del
+  elm_genlist_item_disabled_get
+  elm_genlist_item_disabled_set
+  elm_genlist_item_expanded_get
+  elm_genlist_item_expanded_set
+  elm_genlist_item_genlist_get
+  elm_genlist_item_insert_after
+  elm_genlist_item_insert_before
+  elm_genlist_item_middle_bring_in
+  elm_genlist_item_middle_show
+  elm_genlist_item_next_get
+  elm_genlist_item_object_get
+  elm_genlist_item_parent_get
+  elm_genlist_item_prepend
+  elm_genlist_item_prev_get
+  elm_genlist_item_selected_get
+  elm_genlist_item_selected_set
+  elm_genlist_item_show
+  elm_genlist_item_subitems_clear
+  elm_genlist_item_top_bring_in
+  elm_genlist_item_top_show
+  elm_genlist_item_update
+  elm_genlist_last_item_get
+  elm_genlist_multi_select_set
+  elm_genlist_no_select_mode_set
+  elm_genlist_selected_item_get
+  elm_genlist_selected_items_get
+  elm_hoversel_items_get
+  elm_list_item_del_cb_set
+  elm_list_item_insert_after
+  elm_list_item_insert_before
+  elm_list_item_prepend
+  elm_notify_timer
+  elm_quicklaunch_fork
+  elm_radio_value_pointer_set
+  elm_slideshow_transitions_set
+  elm_win_screen_position_get
+);
 
-
-sub constant {
-    return $_[0];
-}
-
-# This AUTOLOAD is used to 'autoload' constants from the constant() XS
-# function.
-sub AUTOLOAD {
-    my $constname;
-    our $AUTOLOAD;
-    ($constname = $AUTOLOAD) =~ s/.*:://;
-    croak("&EFL::Elementary::constant not defined") if ($constname eq 'constant');
-    my ($error, $val) = constant($constname);
-    if ($error) { croak $error; }
+Sub::Exporter::setup_exporter(
     {
-        no strict 'refs'; ## no critic
-
-        *$AUTOLOAD = sub { $val };
+        'exports' => [ @__constants, @__funcs ],
+        'groups'  => {
+            'funcs'        => \@__funcs,
+            'constants'    => \@__constants,
+            'anchorblock'  => \@elm_anchorblock,
+            'anchorview'   => \@elm_anchorview,
+            'bg'           => \@elm_bg,
+            'box'          => \@elm_box,
+            'bubble'       => \@elm_bubble,
+            'button'       => \@elm_button,
+            'check'        => \@elm_check,
+            'clock'        => \@elm_clock,
+            'entry'        => \@elm_entry,
+            'fileselector' => \@elm_fileselector,
+            'flip'         => \@elm_flip,
+            'frame'        => \@elm_frame,
+            'general'      => \@elm_general,
+            'genlist'      => \@elm_genlist,
+            'hover'        => \@elm_hover,
+            'hoversel'     => \@elm_hoversel,
+            'icon'         => \@elm_icon,
+            'image'        => \@elm_image,
+            'index'        => \@elm_index,
+            'label'        => \@elm_label,
+            'layout'       => \@elm_layout,
+            'list'         => \@elm_list,
+            'map'          => \@elm_map,
+            'menu'         => \@elm_menu,
+            'notepad'      => \@elm_notepad,
+            'notify'       => \@elm_notify,
+            'pager'        => \@elm_pager,
+            'pager'        => \@elm_slideshow,
+            'panel'        => \@elm_panel,
+            'photo'        => \@elm_photo,
+            'photocam'     => \@elm_photocam,
+            'progressbar'  => \@elm_progressbar,
+            'radio'        => \@elm_radio,
+            'scrolled'     => \@elm_scrolled,
+            'scroller'     => \@elm_scroller,
+            'separator'    => \@elm_separator,
+            'slider'       => \@elm_slider,
+            'spinner'      => \@elm_spinner,
+            'table'        => \@elm_table,
+            'toggle'       => \@elm_toggle,
+            'toolbar'      => \@elm_toolbar,
+            'win'          => \@elm_win,
+        },
     }
-    goto &$AUTOLOAD;
-}
+);
 
 sub elm_init {
     my (@args) = @_;
 
-    my $ptrs= pack "P" x @args, @args;
+    my $ptrs = pack('P' x @args, @args);
+
     #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     _elm_init(scalar(@args), $ptrs);
 }
@@ -776,7 +825,8 @@ sub elm_init {
 sub elm_quicklaunch_init {
     my (@args) = @_;
 
-    my $ptrs= pack "P" x @args, @args;
+    my $ptrs = pack('P' x @args, @args);
+
     #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     _elm_quicklaunch_init(scalar(@args), $ptrs);
 }
@@ -784,7 +834,8 @@ sub elm_quicklaunch_init {
 sub elm_quicklaunch_sub_init {
     my (@args) = @_;
 
-    my $ptrs= pack "P" x @args, @args;
+    my $ptrs = pack('P' x @args, @args);
+
     #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     _elm_quicklaunch_sub_init(scalar(@args), $ptrs);
 }
@@ -792,17 +843,19 @@ sub elm_quicklaunch_sub_init {
 sub elm_quicklaunch_prepare {
     my (@args) = @_;
 
-    my $ptrs= pack "P" x @args, @args;
+    my $ptrs = pack('P' x @args, @args);
+
     #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     return _elm_quicklaunch_prepare(scalar(@args), $ptrs);
 }
 
 # TODO sub elm_quicklaunch_fork {}
 
-sub _elm_quicklaunch_fallback {
+sub elm_quicklaunch_fallback {
     my (@args) = @_;
 
-    my $ptrs= pack "P" x @args, @args;
+    my $ptrs = pack('P' x @args, @args);
+
     #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     return _elm_quicklaunch_fallback(scalar(@args), $ptrs);
 }
@@ -818,6 +871,10 @@ __END__
 
 EFL::Elementary - Perl bindings for Enlightenment Foundation Libraries' Elementary
 
+=head1 DESCRIPTION
+
+Perl bindings for the Enlightenment Foundation Libraries (EFL) Elementary
+library.
 
 =head1 SYNOPSIS
 
@@ -837,12 +894,9 @@ EFL::Elementary - Perl bindings for Enlightenment Foundation Libraries' Elementa
     
     elm_exit();
 
+=head1 WARNING
 
-=head1 DESCRIPTION
-
-Perl bindings for the Enlightenment Foundation Libraries (EFL) Elementary
-library.
-
+The API is not set in stone and may change in future releases.
 
 =head1 SEE ALSO
 
@@ -858,7 +912,6 @@ library.
 
 =back
 
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
@@ -871,27 +924,25 @@ You can also look for information at:
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/EFL-Elementary>
+L<http://annocpan.org/dist/EFL>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/EFL-Elementary>
+L<http://cpanratings.perl.org/d/EFL>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL-Elementary>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/EFL-Elementary>
+L<http://search.cpan.org/dist/EFL>
 
 =back
-
 
 =head1 AUTHOR
 
 Adam Flott, E<lt>adam@npjh.comE<gt>
-
 
 =head1 COPYRIGHT AND LICENSE
 

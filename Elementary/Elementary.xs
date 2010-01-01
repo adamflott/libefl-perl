@@ -1388,6 +1388,8 @@ elm_genlist_compress_mode_set(Evas_Object *obj, Eina_Bool compress)
 void
 elm_genlist_bounce_set(Evas_Object *obj, Eina_Bool h_bounce, Eina_Bool v_bounce)
 
+=cut
+
 
 # check
 # ------------------------------------------------------------------------------
@@ -1415,8 +1417,6 @@ elm_check_state_get(const Evas_Object *obj)
 
 void
 elm_check_state_pointer_set(Evas_Object *obj, Eina_Bool *statep)
-
-=cut
 
 # radio
 # ------------------------------------------------------------------------------
