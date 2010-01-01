@@ -14,7 +14,12 @@ use Sub::Exporter;
 use constant EINA_TRUE  => 1;
 use constant EINA_FALSE => 0;
 
-Sub::Exporter::setup_exporter({'exports' => [qw(EINA_TRUE EINA_FALSE)]});
+our @__constants = qw(
+  EINA_TRUE
+  EINA_FALSE
+);
+
+Sub::Exporter::setup_exporter({'exports' => [@__constants]}, 'groups' => {'constants' => \@__constants});
 
 1;
 
@@ -22,17 +27,25 @@ __END__
 
 =head1 NAME
 
-EFL::Eina - Perl bindings for the Enlightenment Foundation Library Eina
-
+EFL::Eina - Perl bindings for the Enlightenment Foundation Libraries' Eina
 
 =head1 SYNOPSIS
 
-Import all Eina functions and constants:
+Import all Eina constants:
 
     use EFL::Eina qw(:all);
 
+    print(EINA_TRUE);
+
 =head1 DESCRIPTION
 
+This module is the Perl bindings for the Enlightenment Foundation Libraries'
+(EFL) Eina library. Due to Eina primarily providing data types in C it's
+coverage in Perl will be limited. Currently, it only provides constants.
+
+=head1 WARNING
+
+The API is not set in stone and may change in future releases.
 
 =head1 SEE ALSO
 
@@ -41,7 +54,6 @@ Main Enlightenment page: L<http://www.enlightenment.org>
 Eina API: L<http://docs.enlightenment.org/auto/eina/>
 
 Git Web Repository: L<http://git.npjh.com/?p=libefl-perl.git;a=summary>
-
 
 =head1 SUPPORT
 
@@ -71,11 +83,9 @@ L<http://search.cpan.org/dist/EFL>
 
 =back
 
-
 =head1 AUTHOR
 
 Adam Flott, E<lt>adam@npjh.comE<gt>
-
 
 =head1 COPYRIGHT AND LICENSE
 
