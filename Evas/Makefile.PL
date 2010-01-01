@@ -9,9 +9,13 @@ use ExtUtils::PkgConfig;
 my %evas_pkg_info = ExtUtils::PkgConfig->find('evas');
 
 WriteMakefile(
-    'NAME'          => 'EFL::Evas',
-    'VERSION_FROM'  => '../lib/EFL/Evas.pm',
-    'PREREQ_PM'     => {},
+    'NAME'         => 'EFL::Evas',
+    'VERSION_FROM' => '../lib/EFL/Evas.pm',
+    'PREREQ_PM'    => {
+        'Carp'          => 0,
+        'XSLoader'      => 0,
+        'Sub::Exporter' => 0,
+    },
     'ABSTRACT_FROM' => '../lib/EFL/Evas.pm',
     'AUTHOR'        => 'Adam Flott <adam@npjh.com>',
     'LIBS'          => $evas_pkg_info{'libs'},
