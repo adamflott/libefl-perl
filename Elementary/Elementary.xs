@@ -4,6 +4,8 @@
 
 #include "elementary-const-c.inc"
 
+#define DEBUG 0
+
 
 MODULE = EFL::Elementary		PACKAGE = EFL::Elementary		
 
@@ -748,10 +750,11 @@ elm_entry_context_menu_item_add(obj, label, icon_file, icon_type, func, data)
     SV *data
     CODE:
         _saved_callback *sc = NULL;
-
         Newx(sc, 1, _saved_callback);
 
-        fprintf(stderr, "elm_entry_context_menu_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        if (DEBUG) {
+            fprintf(stderr, "elm_entry_context_menu_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
 
         sc->func = SvRV((SV *)func);
         sc->data = data;
@@ -908,17 +911,18 @@ elm_hoversel_item_add(obj, label, icon_file, icon_type, func, data)
     Elm_Icon_Type icon_type
     SV *func
     SV *data
-    CODE:
+    PREINIT:
         _saved_callback *sc = NULL;
+    CODE:
+        sc = perl_save_callback_new(func, data);
 
-        Newx(sc, 1, _saved_callback);
+        if (DEBUG) {
+            fprintf(stderr, "elm_hoversel_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
 
-        fprintf(stderr, "elm_hoversel_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
-
-        sc->func = SvRV((SV *)func);
-        sc->data = data;
-
-        elm_hoversel_item_add(obj, label, icon_file, icon_type, call_perl_sub, sc);
+        RETVAL = elm_hoversel_item_add(obj, label, icon_file, icon_type, call_perl_sub, sc);
+    OUTPUT:
+        RETVAL
 
 void
 elm_hoversel_item_del(Elm_Hoversel_Item *item)
@@ -962,19 +966,14 @@ elm_toolbar_item_add(obj, icon, label, func, data)
     const char *label
     SV *func
     SV *data
+    PREINIT:
+        _saved_callback *sc = NULL;        
     CODE:
-        _saved_callback *sc = NULL;
+        sc = perl_save_callback_new(func, data);
 
-        Newx(sc, 1, _saved_callback);
-
-        fprintf(stderr, "elm_toolbar_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
-
-        if (SvROK(func)) {
-        sc->func = SvRV((SV *)func);
-}
-        sc->data = SvRV(data);
-
-        fprintf(stderr, "a elm_toolbar_item_add() func:%x, data:%x, sc:%x\n", sc->func, sc->data, sc);
+        if (DEBUG) {
+            fprintf(stderr, "elm_toolbar_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
 
         RETVAL = elm_toolbar_item_add(obj, icon, label, call_perl_sub, sc);
     OUTPUT:
@@ -1042,21 +1041,19 @@ elm_menu_item_add(obj, parent, icon, label, func, data)
     Evas_Object *icon
     const char *label
     SV *func
-    void *data
-    CODE:
+    SV *data
+    PREINIT:
         _saved_callback *sc = NULL;
+    CODE:
+        sc = perl_save_callback_new(func, data);
 
-        Newx(sc, 1, _saved_callback);
-
-        fprintf(stderr, "elm_menu_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
-
-        sc->func = SvRV((SV *)func);
-        sc->data = data;
+        if (DEBUG) {
+            fprintf(stderr, "elm_menu_item_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
 
         RETVAL = elm_menu_item_add(obj, parent, icon, label, call_perl_sub, sc);
     OUTPUT:
         RETVAL
-
 
 Elm_Menu_Item *
 elm_menu_item_separator_add(Evas_Object *obj, Elm_Menu_Item *parent)
@@ -1095,12 +1092,14 @@ elm_list_item_append(obj, label, icon, end, func, data)
     Evas_Object *icon
     Evas_Object *end
     SV *func
-    void *data
-    CODE:
+    SV *data
+    PREINIT:
         _saved_callback *sc = NULL;
 
-        Newx(sc, 1, _saved_callback);
+    CODE:
+        sc = perl_save_callback_new(func, data);
 
+        /*
         if (SvROK(func)) {
             sc->func = SvRV((SV *)func);
         }
@@ -1113,10 +1112,11 @@ elm_list_item_append(obj, label, icon, end, func, data)
         }
         else {
             sc->data = NULL;
-        }
+        }*/
 
-        fprintf(stderr, "elm_list_item_append() func:%x, data:%x, sc:%x\n", (SV *)func, data, sc);
-        fprintf(stderr, "a elm_list_item_append() func:%x, data:%x, sc:%x\n", sc->func, sc->data, sc);
+        if (DEBUG) {
+            fprintf(stderr, "elm_list_item_append() func:%x, data:%x, sc:%x\n", (SV *)func, data, sc);
+        }
 
         RETVAL = elm_list_item_append(obj, label, icon, end, call_perl_sub, sc);
     OUTPUT:
@@ -1259,7 +1259,9 @@ elm_genlist_item_append(obj, itc, data, parent, flags, func, func_data)
 
         Newx(sc, 1, _saved_callback);
 
-        fprintf(stderr, "elm_genlist_item_append() func:%x, data:%x, sc:%x\n", func, data, sc);
+        if (DEBUG) {
+            fprintf(stderr, "elm_genlist_item_append() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
 
         sc->func = SvRV((SV *)func);
         sc->data = func_data;

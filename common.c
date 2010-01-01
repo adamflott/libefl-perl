@@ -1,4 +1,4 @@
-#define DEBUG 1
+#define DEBUG 0
 
 #include "common.h"
 
@@ -42,9 +42,9 @@ void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
     PUSHMARK(SP);
 
     if (perl_saved_cb->data && SvOK(perl_saved_cb->data)) {
-#ifdef DEBUG
-       fprintf(stderr, "pushing data at %x\n", perl_saved_cb->data);
-#endif
+        if (DEBUG) {
+            fprintf(stderr, "pushing data at %x\n", perl_saved_cb->data);
+        }
 
        /* TODO rest of params */
        XPUSHs(perl_saved_cb->data);
@@ -52,12 +52,12 @@ void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
 
     PUTBACK;
 
-#ifdef DEBUG
-    fprintf(stderr, "call_perl_sub func: %x, SV *: %x, data: %x\n",
-                    perl_saved_cb->func,
-                    perl_saved_cb,
-                    perl_saved_cb->data);
-#endif
+    if (DEBUG) {
+        fprintf(stderr, "call_perl_sub func: %x, SV *: %x, data: %x\n",
+                perl_saved_cb->func,
+                perl_saved_cb,
+                perl_saved_cb->data);
+    }
 
     count = call_sv(perl_saved_cb->func, G_DISCARD);
     if (count != 0) {

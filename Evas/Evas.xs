@@ -4,6 +4,8 @@
 
 #include "evas-const-c.inc"
 
+#define DEBUG 0
+
 
 MODULE = EFL::Evas		PACKAGE = EFL::Evas
 
@@ -1048,7 +1050,9 @@ evas_object_smart_callback_add(obj, event, func, data)
     CODE:
         sc = perl_save_callback_new(func, data);
 
-        fprintf(stderr, "evas_object_smart_callback_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        if (DEBUG) {
+            fprintf(stderr, "evas_object_smart_callback_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
 
         evas_object_smart_callback_add(obj, event, call_perl_sub, sc);
 
