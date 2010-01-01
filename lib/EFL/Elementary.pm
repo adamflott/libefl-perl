@@ -384,6 +384,22 @@ my @elm_photo = qw(
 );
 
 my @elm_hoversel = qw(
+  elm_hoversel_add
+  elm_hoversel_hover_parent_set
+  elm_hoversel_label_set
+  elm_hoversel_label_get
+  elm_hoversel_icon_set
+  elm_hoversel_icon_get
+  elm_hoversel_hover_begin
+  elm_hoversel_hover_end
+  elm_hoversel_clear
+  elm_hoversel_items_get
+  elm_hoversel_item_add
+  elm_hoversel_item_del
+  elm_hoversel_item_data_get
+  elm_hoversel_item_label_get
+  elm_hoversel_item_icon_set
+  elm_hoversel_item_icon_get
 );
 
 my @elm_toolbar = qw(
@@ -677,7 +693,7 @@ our %EXPORT_TAGS = (
         @elm_constants, @elm_general, @elm_win, @elm_bg, @elm_icon, @elm_box, @elm_icon, @elm_toggle, @elm_frame, @elm_label,
         @elm_list, @elm_table, @elm_button, @elm_clock, @elm_layout, @elm_hover, @elm_entry, @elm_scroller, @elm_anchorview, @elm_notepad, @elm_notify, @elm_anchorblock, @elm_bubble, @elm_photo,
         @elm_toolbar, @elm_menu, @elm_slider, @elm_check, @elm_radio, @elm_slideshow, @elm_fileselector, @elm_progressbar, @elm_separator, @elm_spinner, @elm_index, @elm_photocam, @elm_map,
-        @elm_panel,   @elm_flip, @elm_scrolled,  @elm_pager, @elm_image
+        @elm_panel,   @elm_flip, @elm_scrolled,  @elm_pager, @elm_image, @elm_hoversel
 
     ],
     'anchorblock'  => \@elm_anchorblock,
@@ -695,6 +711,7 @@ our %EXPORT_TAGS = (
     'frame'        => \@elm_frame,
     'general'      => \@elm_general,
     'hover'        => \@elm_hover,
+    'hoversel'     => \@elm_hoversel,
     'icon'         => \@elm_icon,
     'image'        => \@elm_image,
     'index'        => \@elm_index,
