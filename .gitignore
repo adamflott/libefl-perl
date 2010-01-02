@@ -29,3 +29,4 @@ tmp/
 .build
 EFL-*/
 EFL-*.tar.gz
+pod2htm*

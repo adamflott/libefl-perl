@@ -67,7 +67,8 @@ prototyping.
 
 =head1 WARNING
 
-The API is not set in stone and may change in future releases.
+With regards to passing data between Perl and C, the API is not set in stone and
+may change in future releases.
 
 =head1 REQUIRES
 
@@ -90,7 +91,7 @@ set C<PKG_CONFIG_PATH>)
 
 =head1 SUPPORTED
 
-Currently only the following are supported:
+Currently only the following are supported.
 
 =over
 
@@ -100,8 +101,18 @@ Currently only the following are supported:
 
 =back
 
-As I need more, I'll add them. Probably ecore, eina (may or may not
-apply), eet.
+=head1 PARTIALLY SUPPORTED
+
+Currently only the following are partially supported. With more support coming
+in the future.
+
+=over
+
+=item * ecore
+
+=item * eina
+
+=back
 
 =head1 NOT SUPPORTED
 
@@ -109,9 +120,9 @@ What I consider very low priority/no priority. Although I am fully open to patch
 
 =over
 
-=item * Windows compatiability
+=item * non-Linux/Windows compatiability
 
-=item * threads
+=item * Perl threads
 
 =back
 
@@ -125,6 +136,20 @@ Check the EFL API documentation for how to correctly call functions.
 To see what functions can be export run C<misc/supported.pl -api <efl-subset>> and
 C<misc/supported.pl -tags <efl-subset>> for the Exporter tags available.
 
+=head1 ACKNOWLEDGEMENTS
+
+Some thanks for helping me out.
+
+=over
+
+=item * Everyone that worked on EFL. The API makes sense and was easy to Perl-ize.
+
+=item * L<Audio::XMMSClient> for showing me some XS tricks.
+
+=item * L<Dist::Zilla> and L<Pod::Weaver> for making it easier to manage releases/POD.
+
+=back
+
 =head1 SEE ALSO
 
 Main Enlightenment page: L<http://www.enlightenment.org>
@@ -132,31 +157,3 @@ Main Enlightenment page: L<http://www.enlightenment.org>
 Elementary API: L<http://docs.enlightenment.org/auto/elementary/>
 
 Git Web Repository: L<http://git.npjh.com/?p=libefl-perl.git;a=summary>
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc EFL
-
-You can also look for information at:
-
-=over
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/EFL>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/EFL>
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/EFL>
-
-=back
