@@ -27,3 +27,5 @@ tmp/
 *.bak
 *.bs
 .build
+EFL-*/
+EFL-*.tar.gz
