@@ -89,6 +89,7 @@ double *                    T_PTR
 float *                     T_PTR
 int *                       T_PTR
 unsigned int *              T_PTR
+Ecore_Timer *               T_PTR
 
 ################################################################################
 INPUT

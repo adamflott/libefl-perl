@@ -15,10 +15,10 @@ foreach (qw(evas elementary)) {
 
 # TODO get rid of this ugly hack
 foreach (qw(common.c common.h)) {
-    printf("Copying %s to %s\n", catfile($Bin, $_), catfile($Bin, 'Evas', $_));
-    copy(catfile($Bin, $_), catfile($Bin, 'Evas', $_)) || die("copy() failed: $!");
-    printf("Copying %s to %s\n", catfile($Bin, $_), catfile($Bin, 'Elementary', $_));
-    copy(catfile($Bin, $_), catfile($Bin, 'Elementary', $_)) || die("copy() failed: $!");
+    foreach my $c (qw(Evas Ecore Elementary)) {
+        printf("Copying %s to %s\n", catfile($Bin, $_), catfile($Bin, $c, $_));
+        copy(catfile($Bin, $_), catfile($Bin, $c, $_)) || die("copy() failed: $!");
+    }
 }
 
 WriteMakefile(

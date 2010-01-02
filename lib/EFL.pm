@@ -11,6 +11,7 @@ our $VERSION    = '0.50';
 our $XS_VERSION = $VERSION;
 
 use EFL::Eina qw(:all);
+use EFL::Ecore qw(:all);
 use EFL::Evas qw(:all);
 use EFL::Elementary qw(:all);
 
@@ -18,9 +19,10 @@ use Sub::Exporter;
 
 Sub::Exporter::setup_exporter(
     {
-        'exports' => [ @EFL::Eina::__constants, @EFL::Evas::__funcs, @EFL::Evas::__constants, @EFL::Elementary::__func, @EFL::Elementary::__constants ],
+        'exports' => [ @EFL::Eina::__constants, @EFL::Ecore::__constants, @EFL::Ecore::__funcs, @EFL::Evas::__funcs, @EFL::Evas::__constants, @EFL::Elementary::__funcs, @EFL::Elementary::__constants ],
         'groups'  => {
             'eina'       => [@EFL::Eina::__constants],
+            'ecore'      => [@EFL::Ecore::__constants, @EFL::Ecore::__funcs],
             'evas'       => [ @EFL::Evas::__funcs, @EFL::Evas::__constants ],
             'elementary' => [ @EFL::Elementary::__funcs, @EFL::Elementary::__constants ]
         }
