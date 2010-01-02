@@ -1,5 +1,7 @@
 package EFL::Eina;
 
+# ABSTRACT: Perl bindings for Eina from the Enlightenment Foundation Libraries
+
 use 5.10.0;
 
 use strict;
@@ -7,7 +9,6 @@ use warnings;
 
 our $VERSION    = '0.50';
 our $XS_VERSION = $VERSION;
-$VERSION = eval $VERSION;    ## no critic
 
 use Sub::Exporter;
 
@@ -23,20 +24,6 @@ Sub::Exporter::setup_exporter({'exports' => [@__constants]}, 'groups' => {'const
 
 1;
 
-__END__
-
-=head1 NAME
-
-EFL::Eina - Perl bindings for the Enlightenment Foundation Libraries' Eina
-
-=head1 SYNOPSIS
-
-Import all Eina constants:
-
-    use EFL::Eina qw(:all);
-
-    print(EINA_TRUE);
-
 =head1 DESCRIPTION
 
 This module is the Perl bindings for the Enlightenment Foundation Libraries'
@@ -46,6 +33,14 @@ coverage in Perl will be limited. Currently, it only provides constants.
 =head1 WARNING
 
 The API is not set in stone and may change in future releases.
+
+=head1 SYNOPSIS
+
+Import all Eina constants:
+
+    use EFL::Eina qw(:all);
+
+    print(EINA_TRUE);
 
 =head1 SEE ALSO
 
@@ -82,15 +77,3 @@ L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL>
 L<http://search.cpan.org/dist/EFL>
 
 =back
-
-=head1 AUTHOR
-
-Adam Flott, E<lt>adam@npjh.comE<gt>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2009 by Adam Flott
-
-EFL::Eina will have the same license as Eina itself.
-
-=cut

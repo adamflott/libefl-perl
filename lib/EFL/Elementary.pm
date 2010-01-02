@@ -1,5 +1,7 @@
 package EFL::Elementary;
 
+# ABSTRACT: Perl bindings for Ecore from the Enlightenment Foundation Libraries
+
 use 5.10.0;
 
 use strict;
@@ -7,7 +9,6 @@ use warnings;
 
 our $VERSION    = '0.50';
 our $XS_VERSION = $VERSION;
-$VERSION = eval $VERSION;    ## no critic
 
 use Carp;
 
@@ -865,12 +866,6 @@ XSLoader::load('EFL::Elementary', $XS_VERSION);
 
 1;
 
-__END__
-
-=head1 NAME
-
-EFL::Elementary - Perl bindings for Enlightenment Foundation Libraries' Elementary
-
 =head1 DESCRIPTION
 
 Perl bindings for the Enlightenment Foundation Libraries (EFL) Elementary
@@ -911,43 +906,3 @@ The API is not set in stone and may change in future releases.
 =item * Git Web Repository: L<http://git.npjh.com/?p=libefl-perl.git;a=summary>
 
 =back
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc EFL::Elementary
-
-You can also look for information at:
-
-=over
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/EFL>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/EFL>
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/EFL>
-
-=back
-
-=head1 AUTHOR
-
-Adam Flott, E<lt>adam@npjh.comE<gt>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2009 by Adam Flott
-
-LGPL. EFL::Elementary will have the same license as Elementary itself.
-
-=cut

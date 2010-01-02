@@ -1,5 +1,7 @@
 package EFL;
 
+# ABSTRACT: Perl bindings for the Enlightenment Foundation Libraries
+
 use 5.10.0;
 
 use strict;
@@ -7,7 +9,6 @@ use warnings;
 
 our $VERSION    = '0.50';
 our $XS_VERSION = $VERSION;
-$VERSION = eval $VERSION;    ## no critic
 
 use EFL::Eina qw(:all);
 use EFL::Evas qw(:all);
@@ -28,17 +29,15 @@ Sub::Exporter::setup_exporter(
 
 1;
 
-__END__
-
-=head1 NAME
-
-EFL - Perl bindings for the Enlightenment Foundation Libraries
-
 =head1 SYNOPSIS
 
 Import all EFL functions from EFL::*:
 
-    use EFL;
+    use EFL qw(:all);
+
+Or only a subset:
+
+    use EFL qw(:evas :elementary);
 
 =head1 DESCRIPTION
 
@@ -102,7 +101,7 @@ Currently only the following are supported:
 As I need more, I'll add them. Probably ecore, eina (may or may not
 apply), eet.
 
-=head1 NOT BE SUPPORTED
+=head1 NOT SUPPORTED
 
 What I consider very low priority/no priority. Although I am fully open to patches.
 
@@ -159,15 +158,3 @@ L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL>
 L<http://search.cpan.org/dist/EFL>
 
 =back
-
-=head1 AUTHOR
-
-Adam Flott, E<lt>adam@npjh.comE<gt>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2009 by Adam Flott
-
-LGPL. EFL will have the same license as EFL itself.
-
-=cut
