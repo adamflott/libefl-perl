@@ -3,43 +3,132 @@ use warnings;
 
 use 5.10.0;
 
+BEGIN {
+    die("\$DISPLAY not set! This test needs X Windows to work!\n") unless ($ENV{'DISPLAY'});
+}
+
+use Test::More;
+my $tn = 0;
+
 use Devel::Peek;
 use Data::Dumper;
 
-my $img_logo_small = "/opt/e17/share/elementary/images/logo_small.png";
-my $img_plant      = "/opt/e17/share/elementary/images/plant_01.jpg";
-my $img_logo       = "/opt/e17/share/elementary/images/logo.png";
-
 my %images = (
-    'panel' => "panel_01.jpg",
-    'rock'  => "rock_01.jpg",
-    'wood'  => "wood_01.jpg",
-    'sky'   => "sky_01.jpg",
-    'sky2'   => "sky_02.jpg",
-    'sky3'   => "sky_03.jpg",
-    'plant' => "plant_01.jpg",
-    'logo' => "logo.png",
+    'panel'      => "panel_01.jpg",
+    'rock'       => "rock_01.jpg",
+    'wood'       => "wood_01.jpg",
+    'sky'        => "sky_01.jpg",
+    'sky2'       => "sky_02.jpg",
+    'sky3'       => "sky_03.jpg",
+    'plant'      => "plant_01.jpg",
+    'logo'       => "logo.png",
     'logo_small' => "logo_small.png"
 );
 
-my $package_data_dir = "/opt/e17/share/elementary/images/";
+my $package_data_dir = $ENV{'ELM_PACKAGE_DATA_DIR'} || "/opt/e17/share/elementary/images/";
 
 foreach (keys(%images)) {
     $images{$_} = $package_data_dir . $images{$_};
+
+    die("$images{$_} not found, aborting test suite.\n") unless (-e $images{$_});
 }
 
-use constant EINA_TRUE => 1;
-
-use EFL::Elementary qw(:all);
-use EFL::Evas qw(:all);
+use EFL qw(:all);
 
 elm_init(@ARGV);
+
+sub basic {
+    my $win = elm_win_add(undef, "main", ELM_WIN_BASIC);
+
+    elm_win_title_set($win, "EFL::Elementary");
+
+    evas_object_smart_callback_add($win, "delete,request", sub { elm_exit(); exit(0); }, undef);
+
+    my $bg = elm_bg_add($win);
+    evas_object_size_hint_weight_set($bg, 1.0, 1.0);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_show($bg);
+
+    my $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, 1.0, 1.0);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    my $bx2 = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx2, 1.0, 1.0);
+    elm_win_resize_object_add($win, $bx2);
+    elm_box_pack_end($bx, $bx2);
+    evas_object_show($bx2);
+
+    my $fr = elm_frame_add($win);
+    elm_frame_label_set($fr, "Do you see this?");
+    elm_box_pack_end($bx2, $fr);
+    evas_object_show($fr);
+
+    my $lb = elm_label_add($win);
+    elm_label_label_set($lb, "If you can see this window, then most likely everything compiled correctly.<br>"
+                           . "If you'd like test out the Elementary test suite (a port of elementary_test to Perl)<br>"
+                           . "click the 'OK' button. Otherwise click 'Cancel' found to Click on the 'OK' button to<br>"
+                           . "exit and pass the test.");
+    elm_frame_content_set($fr, $lb);
+#    elm_object_scale_set($lb, 1.0);
+    evas_object_show($lb);
+
+    my $bx3 = elm_box_add($win);
+    elm_box_horizontal_set($bx3, 1);
+    evas_object_size_hint_weight_set($bx3, 1.0, 1.0);
+    elm_win_resize_object_add($win, $bx3);
+    elm_box_pack_end($bx, $bx3);
+    evas_object_show($bx3);
+
+    my $ok = elm_button_add($win);
+    elm_button_label_set($ok, "OK");
+    elm_box_pack_end($bx3, $ok);
+    evas_object_show($ok);
+
+    my $cancel = elm_button_add($win);
+    elm_button_label_set($cancel, "Cancel");
+    elm_box_pack_end($bx3, $cancel);
+    evas_object_show($cancel);
+
+    evas_object_smart_callback_add($ok, "clicked",
+                                   sub {
+                                       ok(1, "create basic elementary window and continue...");
+                                       $tn++;
+                                       elm_exit();
+                                       evas_object_hide($win);
+                                   }, undef);
+
+    evas_object_smart_callback_add($cancel, "clicked",
+                                   sub {
+                                       ok(1, "create basic elementary window and done testing...");
+                                       $tn++;
+                                       elm_exit();
+                                       exit(0);
+                                   }, undef);
+
+    evas_object_resize($win, 340, 80);
+    evas_object_show($win);
+
+    elm_run();
+}
+
+END {
+    done_testing($tn)
+}
+
+basic();
 
 my $win = elm_win_add(undef, "main", ELM_WIN_BASIC);
 
 elm_win_title_set($win, "EFL::Elementary simple window creation");
 
-evas_object_smart_callback_add($win, "delete,request", sub { print STDERR Dumper(\@_); elm_exit() }, undef);
+evas_object_smart_callback_add($win, "delete,request",
+                               sub {
+                                   ok(1, "Elementary test suite");
+                                   $tn++;
+                                   elm_exit()
+                               }, undef);
 
 my $bg = elm_bg_add($win);
 evas_object_size_hint_weight_set($bg, 1.0, 1.0);
@@ -56,7 +145,8 @@ elm_box_pack_end($bx0, $fr);
 evas_object_show($fr);
 
 my $lb = elm_label_add($win);
-elm_label_label_set($lb, "Please select a test from the list below<br>" . "by clicking the test button to show the<br>" . "test window.");
+elm_label_label_set($lb, "Please select a test from the list below<br>"
+                       . "by clicking the test button to show the<br>test window.");
 elm_frame_content_set($fr, $lb);
 evas_object_show($lb);
 
@@ -67,37 +157,36 @@ evas_object_size_hint_fill_set($li, -1.0, -1.0);
 elm_box_pack_end($bx0, $li);
 evas_object_show($li);
 
-#print STDERR Dump(\&test_toolbar);
-
-# elm_list_item_append($li, "Bg Plain",         undef, undef, \&test_bg_plain,       undef);
-# elm_list_item_append($li, "Bg Image",         undef, undef, \&test_bg_image,       undef);
-elm_list_item_append($li, "Icon Transparent", undef, undef, \&test_icon,           undef);
-# elm_list_item_append($li, "Box Vert",         undef, undef, \&test_box_vert,       undef);
-# elm_list_item_append($li, "Box Horiz",        undef, undef, \&test_box_horiz,      undef);
-# elm_list_item_append($li, "Buttons",          undef, undef, \&test_button,         undef);
-# elm_list_item_append($li, "Toggles",          undef, undef, \&test_toggle,         undef);
-# elm_list_item_append($li, "Table",            undef, undef, \&test_table,          undef);
-# elm_list_item_append($li, "Clock",            undef, undef, \&test_clock,          undef);
-# elm_list_item_append($li, "Layout",           undef, undef, \&test_layout,         undef);
-# elm_list_item_append($li, "Hover",            undef, undef, \&test_hover,          undef);
-# elm_list_item_append($li, "Hover 2",          undef, undef, \&test_hover2,         undef);
-# elm_list_item_append($li, "Entry",            undef, undef, \&test_entry,          undef);
-# elm_list_item_append($li, "Entry Scrolled",   undef, undef, \&test_entry_scrolled, undef);
-# elm_list_item_append($li, "Notepad",          undef, undef, \&test_notepad,        undef);
-# elm_list_item_append($li, "Anchorview",       undef, undef, \&test_anchorview,     undef);
-# elm_list_item_append($li, "Anchorblock",      undef, undef, \&test_anchorblock,    undef);
-# elm_list_item_append($li, "Toolbar",          undef, undef, \&test_toolbar,        undef);
-# elm_list_item_append($li, "Hoversel",         undef, undef, \&test_hoversel,       undef);
-# elm_list_item_append($li, "List",             undef, undef, \&test_list,           undef);
-# elm_list_item_append($li, "List 2",           undef, undef, \&test_list2,          undef);
-# elm_list_item_append($li, "List 3",           undef, undef, \&test_list3,          undef);
-# elm_list_item_append($li, "Carousel",         undef, undef, \&test_carousel,       undef);
-# elm_list_item_append($li, "Inwin",            undef, undef, \&test_inwin,          undef);
-# elm_list_item_append($li, "Inwin 2",          undef, undef, \&test_inwin2,         undef);
-# elm_list_item_append($li, "Scaling",          undef, undef, \&test_scaling,        undef);
-# elm_list_item_append($li, "Scaling 2",        undef, undef, \&test_scaling2,       undef);
-# elm_list_item_append($li, "Slider",           undef, undef, \&test_slider,         undef);
-# elm_list_item_append($li, "Genlist",          undef, undef, \&test_genlist,        undef);
+elm_list_item_append($li, "Bg Plain",         undef, undef, \&test_bg_plain,       undef);
+elm_list_item_append($li, "Bg Image",         undef, undef, \&test_bg_image,       undef);
+elm_list_item_append($li, "Icon Transparent", undef, undef, \&test_icon, undef);
+elm_list_item_append($li, "Box Vert",         undef, undef, \&test_box_vert,       undef);
+elm_list_item_append($li, "Box Horiz",        undef, undef, \&test_box_horiz,      undef);
+elm_list_item_append($li, "Buttons",          undef, undef, \&test_button,         undef);
+elm_list_item_append($li, "Toggles",          undef, undef, \&test_toggle,         undef);
+elm_list_item_append($li, "Table",            undef, undef, \&test_table,          undef);
+elm_list_item_append($li, "Clock",            undef, undef, \&test_clock,          undef);
+elm_list_item_append($li, "Layout",           undef, undef, \&test_layout,         undef);
+elm_list_item_append($li, "Hover",          undef, undef, \&test_hover,          undef);
+elm_list_item_append($li, "Hover 2",        undef, undef, \&test_hover2,         undef);
+elm_list_item_append($li, "Entry",          undef, undef, \&test_entry,          undef);
+elm_list_item_append($li, "Entry Scrolled", undef, undef, \&test_entry_scrolled, undef);
+elm_list_item_append($li, "Notepad",          undef, undef, \&test_notepad,        undef);
+# TODO push args on stack elm_list_item_append($li, "Anchorview",       undef, undef, \&test_anchorview,     undef);
+# TODO push args on stack elm_list_item_append($li, "Anchorblock",      undef, undef, \&test_anchorblock,    undef);
+elm_list_item_append($li, "Toolbar",  undef, undef, \&test_toolbar,  undef);
+elm_list_item_append($li, "Hoversel", undef, undef, \&test_hoversel, undef);
+elm_list_item_append($li, "List",     undef, undef, \&test_list,     undef);
+# TODO push args on stack elm_list_item_append($li, "List 2",           undef, undef, \&test_list2,          undef);
+elm_list_item_append($li, "List 3",   undef, undef, \&test_list3,    undef);
+elm_list_item_append($li, "Carousel", undef, undef, \&test_carousel, undef);
+elm_list_item_append($li, "Inwin",    undef, undef, \&test_inwin,    undef);
+elm_list_item_append($li, "Inwin 2",  undef, undef, \&test_inwin2,   undef);
+elm_list_item_append($li, "Scaling",          undef, undef, \&test_scaling,        undef);
+elm_list_item_append($li, "Scaling 2",        undef, undef, \&test_scaling2,       undef);
+elm_list_item_append($li, "Slider",           undef, undef, \&test_slider,         undef);
+elm_list_item_append($li, "Genlist",          undef, undef, \&test_genlist,        undef);
+# TODO ...
 # elm_list_item_append($li, "Genlist 2",        undef, undef, \&test_genlist2,       undef);
 # elm_list_item_append($li, "Genlist 3",        undef, undef, \&test_genlist3,       undef);
 # elm_list_item_append($li, "Genlist 4",        undef, undef, \&test_genlist4,       undef);
@@ -105,9 +194,10 @@ elm_list_item_append($li, "Icon Transparent", undef, undef, \&test_icon,        
 # elm_list_item_append($li, "Genlist Tree",     undef, undef, \&test_genlist6,       undef);
 # elm_list_item_append($li, "Checks",           undef, undef, \&test_check,          undef);
 # elm_list_item_append($li, "Radios",           undef, undef, \&test_radio,          undef);
- elm_list_item_append($li, "Pager",            undef, undef, \&test_pager,          undef);
- elm_list_item_append($li, "Window States",    undef, undef, \&test_win_state,      undef);
-# elm_list_item_append($li, "Progressbar",      undef, undef, \&test_progressbar,    undef);
+elm_list_item_append($li, "Pager",         undef, undef, \&test_pager,     undef);
+elm_list_item_append($li, "Window States", undef, undef, \&test_win_state, undef);
+elm_list_item_append($li, "Progressbar",      undef, undef, \&test_progressbar,    undef);
+# TODO ...
 # elm_list_item_append($li, "File Selector",    undef, undef, \&test_fileselector,   undef);
 # elm_list_item_append($li, "Separator",        undef, undef, \&test_separator,      undef);
 # elm_list_item_append($li, "Scroller",         undef, undef, \&test_scroller,       undef);
@@ -165,7 +255,7 @@ sub test_bg_image {
     elm_win_autodel_set($win, 1);
 
     $bg = elm_bg_add($win);
-    elm_bg_file_set($bg, $img_plant, undef);
+    elm_bg_file_set($bg, $images{'plant'}, undef);
     evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
     elm_win_resize_object_add($win, $bg);
     evas_object_show($bg);
@@ -177,9 +267,10 @@ sub test_bg_image {
 }
 
 sub icon_clicked {
-    printf(STDERR "clicked!\n");
     print(STDERR Dumper(\@_));
-    evas_object_hide($_[0]);
+    my ($win) = @_;
+    printf(STDERR "clicked!\n");
+    evas_object_hide($$win);
 }
 
 sub test_icon {
@@ -191,12 +282,12 @@ sub test_icon {
     elm_win_alpha_set($win, 1);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo, undef);
+    elm_icon_file_set($ic, $images{'logo'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     elm_win_resize_object_add($win, $ic);
     evas_object_show($ic);
 
-    evas_object_smart_callback_add($ic, "clicked", \&icon_clicked, $win);
+    evas_object_smart_callback_add($ic, "clicked", \&icon_clicked, \$win);
 
     evas_object_show($win);
 }
@@ -219,21 +310,21 @@ sub test_box_vert {
     evas_object_show($bx);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_align_set($ic, 0.5, 0.5);
     elm_box_pack_end($bx, $ic);
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_align_set($ic, 0.0, 0.5);
     elm_box_pack_end($bx, $ic);
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_align_set($ic, EVAS_HINT_EXPAND, 0.5);
     elm_box_pack_end($bx, $ic);
@@ -261,21 +352,21 @@ sub test_box_horiz {
     evas_object_show($bx);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_align_set($ic, 0.5, 0.5);
     elm_box_pack_end($bx, $ic);
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_align_set($ic, 0.5, 0.0);
     elm_box_pack_end($bx, $ic);
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_align_set($ic, 0.0, EVAS_HINT_EXPAND);
     elm_box_pack_end($bx, $ic);
@@ -302,7 +393,7 @@ sub test_button {
     evas_object_show($bx);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Icon sized to button");
@@ -312,7 +403,7 @@ sub test_button {
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Icon no scale");
@@ -322,7 +413,7 @@ sub test_button {
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Disabled Button");
@@ -333,7 +424,7 @@ sub test_button {
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
     $bt = elm_button_add($win);
     elm_button_icon_set($bt, $ic);
@@ -348,7 +439,7 @@ sub test_button {
     evas_object_show($bt);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     $bt = elm_button_add($win);
     elm_button_icon_set($bt, $ic);
@@ -363,7 +454,7 @@ sub test_button {
     evas_object_show($bt);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
     $bt = elm_button_add($win);
     elm_object_style_set($bt, "anchor");
@@ -373,7 +464,7 @@ sub test_button {
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
     $bt = elm_button_add($win);
     elm_object_style_set($bt, "anchor");
@@ -404,7 +495,7 @@ sub test_toggle {
     evas_object_show($bx);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
 
     $tg = elm_toggle_add($win);
@@ -419,7 +510,7 @@ sub test_toggle {
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
 
     $tg = elm_toggle_add($win);
@@ -430,7 +521,7 @@ sub test_toggle {
     evas_object_show($ic);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
 
     $tg = elm_toggle_add($win);
@@ -448,7 +539,7 @@ sub test_toggle {
     evas_object_show($tg);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
 
     $tg = elm_toggle_add($win);
@@ -607,10 +698,9 @@ sub test_layout {
 }
 
 sub my_hover_bt {
-    print STDERR Dumper(\@_);
     my ($hv) = @_;
 
-    evas_object_show($hv);
+    evas_object_show($$hv);
 }
 
 sub test_hover {
@@ -635,7 +725,7 @@ sub test_hover {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Button");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_hover_bt, \$hv);    # TODO 3rd arg
+    evas_object_smart_callback_add($bt, "clicked", \&my_hover_bt, \$hv);
     elm_box_pack_end($bx, $bt);
     evas_object_show($bt);
     elm_hover_parent_set($hv, $win);
@@ -649,7 +739,7 @@ sub test_hover {
     $bx = elm_box_add($win);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     elm_box_pack_end($bx, $ic);
     evas_object_show($ic);
@@ -714,7 +804,7 @@ sub test_hover2 {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Button");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_hover_bt, $hv);
+    evas_object_smart_callback_add($bt, "clicked", \&my_hover_bt, \$hv);
     elm_box_pack_end($bx, $bt);
     evas_object_show($bt);
     elm_hover_parent_set($hv, $win);
@@ -728,7 +818,7 @@ sub test_hover2 {
     $bx = elm_box_add($win);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     elm_box_pack_end($bx, $ic);
     evas_object_show($ic);
@@ -769,44 +859,40 @@ sub test_hover2 {
 
 #TODO
 sub my_entry_bt_1 {
-
-    #Evas_Object *en = data;
-    #elm_entry_entry_set(en, "");
+    my ($en) = @_;
+    elm_entry_entry_set($$en, "");
 }
 
 sub my_entry_bt_2 {
-
-    #Evas_Object *en = data;
-    #const char *s = elm_entry_entry_get(en);
-    #printf("ENTRY:\n");
-    #if (s) printf("%s\n", s);
+    my ($en) = @_;
+    my $s = elm_entry_entry_get($$en);
+    printf("ENTRY:\n");
+    if ($s) {
+        printf("%s\n", $s);
+    }
 }
 
 sub my_entry_bt_3 {
-
-    #Evas_Object *en = data;
-    #const char *s = elm_entry_selection_get(en);
-    #printf("SELECTION:\n");
-    #if (s) printf("%s\n", s);
+    my ($en) = @_;
+    my $s = elm_entry_selection_get($$en);
+    printf("SELECTION:\n");
+    if ($s) { printf("%s\n", $s); }
 }
 
 sub my_entry_bt_4 {
-
-    #Evas_Object *en = data;
-    #elm_entry_entry_insert(en, "Insert some <b>BOLD</> text");
+    my ($en) = @_;
+    elm_entry_entry_insert($$en, "Insert some <b>BOLD</> text");
 }
 
 sub my_entry_bt_5 {
-
-    #Evas_Object *en = data;
-    #const char *s = elm_entry_entry_get(en);
-    #printf("PASSWORD: '%s'\n", s ? s : "");
+    my ($en) = @_;
+    my $s = elm_entry_entry_get($$en);
+    printf("PASSWORD: '%s'\n", $s ? $s : "");
 }
 
 sub anchor_test {
-
-    #Evas_Object *en = data;
-    #elm_entry_entry_insert(en, "ANCHOR CLICKED");
+    my ($en) = @_;
+    elm_entry_entry_insert($$en, "ANCHOR CLICKED");
 }
 
 sub test_entry {
@@ -849,7 +935,7 @@ sub test_entry {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Clear");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_1, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_1, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -859,7 +945,7 @@ sub test_entry {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Print");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_2, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_2, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -869,7 +955,7 @@ sub test_entry {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Selection");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_3, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_3, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -879,7 +965,7 @@ sub test_entry {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Insert");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_4, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_4, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1031,7 +1117,7 @@ sub test_entry_scrolled {
           . "to refer to them this way. At the end here is a really long line to test line wrapping to see if it works. But just in case this line is not long enough I will add more here to really test it out, as Elementary really needs some good testing to see if entry widgets work as advertised."
     );
 
-    evas_object_smart_callback_add($en, "anchor,clicked", \&anchor_test, $en);
+    evas_object_smart_callback_add($en, "anchor,clicked", \&anchor_test, \$en);
     evas_object_size_hint_weight_set($en, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set($en, EVAS_HINT_FILL, EVAS_HINT_FILL);
     elm_scroller_content_set($sc, $en);
@@ -1047,7 +1133,7 @@ sub test_entry_scrolled {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Clear");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_1, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_1, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1056,7 +1142,7 @@ sub test_entry_scrolled {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Print");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_2, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_2, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1065,7 +1151,7 @@ sub test_entry_scrolled {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Print pwd");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_5, $en_p);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_5, \$en_p);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1074,7 +1160,7 @@ sub test_entry_scrolled {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Selection");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_3, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_3, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1083,7 +1169,7 @@ sub test_entry_scrolled {
     $bt = elm_button_add($win);
     elm_button_label_set($bt, "Insert");
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_4, $en);
+    evas_object_smart_callback_add($bt, "clicked", \&my_entry_bt_4, \$en);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1097,18 +1183,12 @@ sub test_entry_scrolled {
 }
 
 sub my_notepad_bt_1 {
-
-    #Evas_Object *np = data;
 }
 
 sub my_notepad_bt_2 {
-
-    #Evas_Object *np = data;
 }
 
 sub my_notepad_bt_3 {
-
-    #Evas_Object *np = data;
 }
 
 sub test_notepad {
@@ -1148,7 +1228,7 @@ sub test_notepad {
     elm_button_icon_set($bt, $ic);
     evas_object_show($ic);
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_notepad_bt_1, $np);
+    evas_object_smart_callback_add($bt, "clicked", \&my_notepad_bt_1, \$np);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1161,7 +1241,7 @@ sub test_notepad {
     elm_button_icon_set($bt, $ic);
     evas_object_show($ic);
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_notepad_bt_2, $np);
+    evas_object_smart_callback_add($bt, "clicked", \&my_notepad_bt_2, \$np);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1174,7 +1254,7 @@ sub test_notepad {
     elm_button_icon_set($bt, $ic);
     evas_object_show($ic);
 
-    evas_object_smart_callback_add($bt, "clicked", \&my_notepad_bt_3, $np);
+    evas_object_smart_callback_add($bt, "clicked", \&my_notepad_bt_3, \$np);
     evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
     elm_box_pack_end($bx2, $bt);
@@ -1195,7 +1275,6 @@ sub my_anchorview_bt {
     #    elm_anchorview_hover_end(av);
 }
 
-#
 sub my_anchorview_anchor {
 
     #(void *data, Evas_Object *obj, void *event_info)
@@ -1291,10 +1370,10 @@ sub test_anchorview {
     evas_object_show($win);
 }
 
-sub my_anchorblock_bt
-{
-#    Evas_Object *av = data;
-#    elm_anchorblock_hover_end(av);
+sub my_anchorblock_bt {
+
+    #    Evas_Object *av = data;
+    #    elm_anchorblock_hover_end(av);
 }
 
 sub my_anchorblock_anchor {
@@ -1408,7 +1487,7 @@ sub test_anchorblock {
     evas_object_size_hint_align_set($bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
 
@@ -1431,7 +1510,7 @@ sub test_anchorblock {
     evas_object_show($bb);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
 
     $bb = elm_bubble_add($win);
@@ -1466,7 +1545,7 @@ sub test_anchorblock {
     evas_object_show($bb);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_icon_scale_set($ic, 0, 0);
     evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
 
@@ -1500,32 +1579,29 @@ sub test_anchorblock {
     evas_object_show($win);
 }
 
-
-sub tb_1
-{
-#    elm_photo_file_set($data, $images{'panel'});
+sub tb_1 {
+    my ($data) = @_;
+    elm_photo_file_set($$data, $images{'panel'});
 }
 
-sub tb_2
-{
-print STDERR Dumper(\@_);
-my $data = $_[0];
-    #elm_photo_file_set($data, $images{'rock'});
+sub tb_2 {
+    my ($data) = @_;
+    elm_photo_file_set($$data, $images{'rock'});
 }
 
-sub tb_3
-{
-#    elm_photo_file_set(data, $images{'wood'});
+sub tb_3 {
+    my ($data) = @_;
+    elm_photo_file_set($$data, $images{'wood'});
 }
 
-sub tb_4
-{
-#    elm_photo_file_set(data, $images{'sky'});
+sub tb_4 {
+    my ($data) = @_;
+    elm_photo_file_set($$data, $images{'sky'});
 }
 
-sub tb_5
-{
-#    elm_photo_file_set(data, undef);
+sub tb_5 {
+    my ($data) = @_;
+    elm_photo_file_set($$data, undef);
 }
 
 sub test_toolbar {
@@ -1560,50 +1636,49 @@ sub test_toolbar {
     $ph4 = elm_photo_add($win);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
 
-    $item = elm_toolbar_item_add($tb, $ic, "Hello", \&tb_1, $ph1);
+    $item = elm_toolbar_item_add($tb, $ic, "Hello", \&tb_1, \$ph1);
     elm_toolbar_item_disabled_set($item, EINA_TRUE);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-print STDERR Dump($ph1);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     elm_toolbar_item_add($tb, $ic, "World", \&tb_2, \$ph1);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    elm_toolbar_item_add($tb, $ic, "H", \&tb_3, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_toolbar_item_add($tb, $ic, "H", \&tb_3, \$ph4);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    elm_toolbar_item_add($tb, $ic, "Comes", \&tb_4, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_toolbar_item_add($tb, $ic, "Comes", \&tb_4, \$ph4);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    elm_toolbar_item_add($tb, $ic, "Elementary", \&tb_5, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_toolbar_item_add($tb, $ic, "Elementary", \&tb_5, \$ph4);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
     $item = elm_toolbar_item_add($tb, $ic, "Menu", undef, undef);
     elm_toolbar_item_menu_set($item, 1);
     elm_toolbar_menu_parent_set($tb, $win);
     $menu = elm_toolbar_item_menu_get($item);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    elm_menu_item_add($menu, undef, $ic, "Here", \&tb_3, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_menu_item_add($menu, undef, $ic, "Here", \&tb_3, \$ph4);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    $menu_item = elm_menu_item_add($menu, undef, $ic, "Comes", \&tb_4, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    $menu_item = elm_menu_item_add($menu, undef, $ic, "Comes", \&tb_4, \$ph4);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    elm_menu_item_add($menu, $menu_item, $ic, "hey ho", \&tb_4, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_menu_item_add($menu, $menu_item, $ic, "hey ho", \&tb_4, \$ph4);
 
     $ic = elm_icon_add($win);
-    elm_icon_file_set($ic, $img_logo_small, undef);
-    $menu_item = elm_menu_item_add($menu, undef, $ic, "Elementary", \&tb_5, $ph4);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    $menu_item = elm_menu_item_add($menu, undef, $ic, "Elementary", \&tb_5, \$ph4);
 
     elm_box_pack_end($bx, $tb);
     evas_object_show($tb);
@@ -1653,16 +1728,1237 @@ print STDERR Dump($ph1);
     evas_object_show($win);
 }
 
+sub test_hoversel {
+    my ($win, $bg, $bx, $bt, $ic);
+
+    $win = elm_win_add(undef, "hoversel", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Hoversel");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $bx = elm_box_add($win);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bx);
+
+    $bt = elm_hoversel_add($win);
+    elm_hoversel_hover_parent_set($bt, $win);
+    elm_hoversel_label_set($bt, "Labels");
+    elm_hoversel_item_add($bt, "Item 1",                   undef, ELM_ICON_NONE, undef, undef);
+    elm_hoversel_item_add($bt, "Item 2",                   undef, ELM_ICON_NONE, undef, undef);
+    elm_hoversel_item_add($bt, "Item 3",                   undef, ELM_ICON_NONE, undef, undef);
+    elm_hoversel_item_add($bt, "Item 4 - Long Label Here", undef, ELM_ICON_NONE, undef, undef);
+    evas_object_size_hint_weight_set($bt, 0.0, 0.0);
+    evas_object_size_hint_align_set($bt, 0.5, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_hoversel_add($win);
+    elm_hoversel_hover_parent_set($bt, $win);
+    elm_hoversel_label_set($bt, "Some Icons");
+    elm_hoversel_item_add($bt, "Item 1", undef,   ELM_ICON_NONE,     undef, undef);
+    elm_hoversel_item_add($bt, "Item 2", undef,   ELM_ICON_NONE,     undef, undef);
+    elm_hoversel_item_add($bt, "Item 3", "home",  ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 4", "close", ELM_ICON_STANDARD, undef, undef);
+    evas_object_size_hint_weight_set($bt, 0.0, 0.0);
+    evas_object_size_hint_align_set($bt, 0.5, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_hoversel_add($win);
+    elm_hoversel_hover_parent_set($bt, $win);
+    elm_hoversel_label_set($bt, "All Icons");
+    elm_hoversel_item_add($bt, "Item 1", "apps",       ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 2", "arrow_down", ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 3", "home",       ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 4", "close",      ELM_ICON_STANDARD, undef, undef);
+    evas_object_size_hint_weight_set($bt, 0.0, 0.0);
+    evas_object_size_hint_align_set($bt, 0.5, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_hoversel_add($win);
+    elm_hoversel_hover_parent_set($bt, $win);
+    elm_hoversel_label_set($bt, "All Icons");
+    elm_hoversel_item_add($bt, "Item 1", "apps",         ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 2", $images{'sky'}, ELM_ICON_FILE,     undef, undef);
+    elm_hoversel_item_add($bt, "Item 3", "home",         ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 4", "close",        ELM_ICON_STANDARD, undef, undef);
+    evas_object_size_hint_weight_set($bt, 0.0, 0.0);
+    evas_object_size_hint_align_set($bt, 0.5, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_hoversel_add($win);
+    elm_hoversel_hover_parent_set($bt, $win);
+    elm_hoversel_label_set($bt, "Disabled Hoversel");
+    elm_hoversel_item_add($bt, "Item 1", "apps",  ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 2", "close", ELM_ICON_STANDARD, undef, undef);
+    elm_object_disabled_set($bt, 1);
+    evas_object_size_hint_weight_set($bt, 0.0, 0.0);
+    evas_object_size_hint_align_set($bt, 0.5, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_hoversel_add($win);
+    elm_hoversel_hover_parent_set($bt, $win);
+    elm_hoversel_label_set($bt, "Icon + Label");
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'sky'}, undef);
+    elm_hoversel_icon_set($bt, $ic);
+    evas_object_show($ic);
+
+    elm_hoversel_item_add($bt, "Item 1", "apps",       ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 2", "arrow_down", ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 3", "home",       ELM_ICON_STANDARD, undef, undef);
+    elm_hoversel_item_add($bt, "Item 4", "close",      ELM_ICON_STANDARD, undef, undef);
+    evas_object_size_hint_weight_set($bt, 0.0, 0.0);
+    evas_object_size_hint_align_set($bt, 0.5, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    evas_object_resize($win, 320, 300);
+
+    evas_object_show($win);
+}
+
+sub my_show_it {
+    my ($data) = @_;
+    elm_list_item_show($$data);
+}
+
+sub test_list {
+    my ($win, $bg, $li, $ic, $ic2, $bx, $tb2, $bt);
+    my ($it1, $it2, $it3, $it4, $it5);
+
+    $win = elm_win_add(undef, "list", ELM_WIN_BASIC);
+    elm_win_title_set($win, "List");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $li = elm_list_add($win);
+    elm_win_resize_object_add($win, $li);
+    evas_object_size_hint_weight_set($li, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 1, 1);
+    $it1 = elm_list_item_append($li, "Hello", $ic, undef, undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_scale_set($ic, 0, 0);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_list_item_append($li, "world", $ic, undef, undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_standard_set($ic, "edit");
+    elm_icon_scale_set($ic, 0, 0);
+    elm_list_item_append($li, ".", $ic, undef, undef, undef);
+
+    $ic = elm_icon_add($win);
+    elm_icon_standard_set($ic, "delete");
+    elm_icon_scale_set($ic, 0, 0);
+    $ic2 = elm_icon_add($win);
+    elm_icon_standard_set($ic2, "clock");
+    elm_icon_scale_set($ic2, 0, 0);
+    $it2 = elm_list_item_append($li, "How", $ic, $ic2, undef, undef);
+
+    $bx = elm_box_add($win);
+    elm_box_horizontal_set($bx, 1);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.5, 0.5);
+    elm_box_pack_end($bx, $ic);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.5, 0.0);
+    elm_box_pack_end($bx, $ic);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.0, EVAS_HINT_EXPAND);
+    elm_box_pack_end($bx, $ic);
+    evas_object_show($ic);
+    elm_list_item_append($li, "are", $bx, undef, undef, undef);
+
+    elm_list_item_append($li, "you", undef, undef, undef, undef);
+    $it3 = elm_list_item_append($li, "doing", undef, undef, undef, undef);
+    elm_list_item_append($li, "out",   undef, undef, undef, undef);
+    elm_list_item_append($li, "there", undef, undef, undef, undef);
+    elm_list_item_append($li, "today", undef, undef, undef, undef);
+    elm_list_item_append($li, "?",     undef, undef, undef, undef);
+    $it4 = elm_list_item_append($li, "Here", undef, undef, undef, undef);
+    elm_list_item_append($li, "are",                        undef, undef, undef, undef);
+    elm_list_item_append($li, "some",                       undef, undef, undef, undef);
+    elm_list_item_append($li, "more",                       undef, undef, undef, undef);
+    elm_list_item_append($li, "items",                      undef, undef, undef, undef);
+    elm_list_item_append($li, "Is this label long enough?", undef, undef, undef, undef);
+    $it5 = elm_list_item_append($li, "Maybe this one is even longer so we can test long long items.", undef, undef, undef, undef);
+
+    elm_list_go($li);
+
+    evas_object_show($li);
+
+    $tb2 = elm_table_add($win);
+    evas_object_size_hint_weight_set($tb2, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $tb2);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Hello");
+    evas_object_smart_callback_add($bt, "clicked", \&my_show_it, \$it1);
+    evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($bt, 0.9, 0.5);
+    elm_table_pack($tb2, $bt, 0, 0, 1, 1);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "How");
+    evas_object_smart_callback_add($bt, "clicked", \&my_show_it, \$it2);
+    evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($bt, 0.9, 0.5);
+    elm_table_pack($tb2, $bt, 0, 1, 1, 1);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "doing");
+    evas_object_smart_callback_add($bt, "clicked", \&my_show_it, \$it3);
+    evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($bt, 0.9, 0.5);
+    elm_table_pack($tb2, $bt, 0, 2, 1, 1);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Here");
+    evas_object_smart_callback_add($bt, "clicked", \&my_show_it, \$it4);
+    evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($bt, 0.9, 0.5);
+    elm_table_pack($tb2, $bt, 0, 3, 1, 1);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Maybe this...");
+    evas_object_smart_callback_add($bt, "clicked", \&my_show_it, \$it5);
+    evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($bt, 0.9, 0.5);
+    elm_table_pack($tb2, $bt, 0, 4, 1, 1);
+    evas_object_show($bt);
+
+    evas_object_show($tb2);
+
+    evas_object_resize($win, 320, 300);
+    evas_object_show($win);
+}
+
+sub my_li2_clear {
+    my ($data) = @_;
+    elm_list_clear($$data);
+}
+
+sub my_li2_sel {
+
+    #Elm_List_Item *it = elm_list_selected_item_get(obj);
+    #elm_list_item_selected_set(it, 0);
+    #   elm_list_item_selected_set(event_info, 0);
+}
+
+sub test_list2 {
+    my ($win, $bg, $li, $ic, $ic2, $bx, $bx2, $bt);
+    my $it;
+
+    $win = elm_win_add(undef, "list-2", ELM_WIN_BASIC);
+    elm_win_title_set($win, "List 2");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_bg_file_set($bg, $images{'plant'}, undef);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    $li = elm_list_add($win);
+    evas_object_size_hint_align_set($li, EVAS_HINT_FILL, EVAS_HINT_FILL);
+    evas_object_size_hint_weight_set($li, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_list_horizontal_mode_set($li, ELM_LIST_LIMIT);
+
+    #   elm_list_multi_select_set($li, 1);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    $it = elm_list_item_append($li, "Hello", $ic, undef, \&my_li2_sel, undef);
+    elm_list_item_selected_set($it, 1);
+    $ic = elm_icon_add($win);
+    elm_icon_scale_set($ic, 0, 0);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_list_item_append($li, "world", $ic, undef, undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_standard_set($ic, "edit");
+    elm_icon_scale_set($ic, 0, 0);
+    elm_list_item_append($li, ".", $ic, undef, undef, undef);
+
+    $ic = elm_icon_add($win);
+    elm_icon_standard_set($ic, "delete");
+    elm_icon_scale_set($ic, 0, 0);
+    $ic2 = elm_icon_add($win);
+    elm_icon_standard_set($ic2, "clock");
+    elm_icon_scale_set($ic2, 0, 0);
+    elm_list_item_append($li, "How", $ic, $ic2, undef, undef);
+
+    $bx2 = elm_box_add($win);
+    elm_box_horizontal_set($bx2, 1);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.5, 0.5);
+    elm_box_pack_end($bx2, $ic);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.5, 0.0);
+    elm_box_pack_end($bx2, $ic);
+    evas_object_show($ic);
+    elm_list_item_append($li, "are", $bx2, undef, undef, undef);
+
+    elm_list_item_append($li, "you",           undef, undef, undef, undef);
+    elm_list_item_append($li, "doing",         undef, undef, undef, undef);
+    elm_list_item_append($li, "out",           undef, undef, undef, undef);
+    elm_list_item_append($li, "there",         undef, undef, undef, undef);
+    elm_list_item_append($li, "today",         undef, undef, undef, undef);
+    elm_list_item_append($li, "?",             undef, undef, undef, undef);
+    elm_list_item_append($li, "Here",          undef, undef, undef, undef);
+    elm_list_item_append($li, "are",           undef, undef, undef, undef);
+    elm_list_item_append($li, "some",          undef, undef, undef, undef);
+    elm_list_item_append($li, "more",          undef, undef, undef, undef);
+    elm_list_item_append($li, "items",         undef, undef, undef, undef);
+    elm_list_item_append($li, "Longer label.", undef, undef, undef, undef);
+
+    elm_list_go($li);
+
+    elm_box_pack_end($bx, $li);
+    evas_object_show($li);
+
+    $bx2 = elm_box_add($win);
+    elm_box_horizontal_set($bx2, 1);
+    elm_box_homogenous_set($bx2, 1);
+    evas_object_size_hint_weight_set($bx2, EVAS_HINT_EXPAND, 0.0);
+    evas_object_size_hint_align_set($bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Clear");
+    evas_object_smart_callback_add($bt, "clicked", \&my_li2_clear, \$li);
+    evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+    evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+    elm_box_pack_end($bx2, $bt);
+    evas_object_show($bt);
+
+    elm_box_pack_end($bx, $bx2);
+    evas_object_show($bx2);
+
+    evas_object_resize($win, 320, 300);
+    evas_object_show($win);
+}
+
+sub test_list3 {
+    my ($win, $bg, $li, $ic, $ic2, $bx);
+
+    $win = elm_win_add(undef, "list-3", ELM_WIN_BASIC);
+    elm_win_title_set($win, "List 3");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $li = elm_list_add($win);
+    elm_win_resize_object_add($win, $li);
+    evas_object_size_hint_weight_set($li, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_list_horizontal_mode_set($li, ELM_LIST_COMPRESS);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_list_item_append($li, "Hello", $ic, undef, undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_scale_set($ic, 0, 0);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_list_item_append($li, "world", $ic, undef, undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_standard_set($ic, "edit");
+    elm_icon_scale_set($ic, 0, 0);
+    elm_list_item_append($li, ".", $ic, undef, undef, undef);
+
+    $ic = elm_icon_add($win);
+    elm_icon_standard_set($ic, "delete");
+    elm_icon_scale_set($ic, 0, 0);
+    $ic2 = elm_icon_add($win);
+    elm_icon_standard_set($ic2, "clock");
+    elm_icon_scale_set($ic2, 0, 0);
+    elm_list_item_append($li, "How", $ic, $ic2, undef, undef);
+
+    $bx = elm_box_add($win);
+    elm_box_horizontal_set($bx, 1);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.5, 0.5);
+    elm_box_pack_end($bx, $ic);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.5, 0.0);
+    elm_box_pack_end($bx, $ic);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    evas_object_size_hint_align_set($ic, 0.0, EVAS_HINT_EXPAND);
+    elm_box_pack_end($bx, $ic);
+    evas_object_show($ic);
+
+    elm_list_item_append($li, "are",                                                           $bx,   undef, undef, undef);
+    elm_list_item_append($li, "you",                                                           undef, undef, undef, undef);
+    elm_list_item_append($li, "doing",                                                         undef, undef, undef, undef);
+    elm_list_item_append($li, "out",                                                           undef, undef, undef, undef);
+    elm_list_item_append($li, "there",                                                         undef, undef, undef, undef);
+    elm_list_item_append($li, "today",                                                         undef, undef, undef, undef);
+    elm_list_item_append($li, "?",                                                             undef, undef, undef, undef);
+    elm_list_item_append($li, "Here",                                                          undef, undef, undef, undef);
+    elm_list_item_append($li, "are",                                                           undef, undef, undef, undef);
+    elm_list_item_append($li, "some",                                                          undef, undef, undef, undef);
+    elm_list_item_append($li, "more",                                                          undef, undef, undef, undef);
+    elm_list_item_append($li, "items",                                                         undef, undef, undef, undef);
+    elm_list_item_append($li, "Is this label long enough?",                                    undef, undef, undef, undef);
+    elm_list_item_append($li, "Maybe this one is even longer so we can test long long items.", undef, undef, undef, undef);
+
+    elm_list_go($li);
+
+    evas_object_show($li);
+
+    evas_object_resize($win, 320, 300);
+    evas_object_show($win);
+}
+
+sub test_carousel {
+    my ($win, $bg);
+
+    $win = elm_win_add(undef, "carousel", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Carousel");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    evas_object_resize($win, 320, 240);
+    evas_object_show($win);
+}
+
+sub test_inwin {
+    my ($win, $bg, $inwin, $lb);
+
+    $win = elm_win_add(undef, "inwin", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Inwin");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $inwin = elm_win_inwin_add($win);
+    evas_object_show($inwin);
+
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb,
+            "This is an \"inwin\" - a window in a<br>"
+          . "window. This is handy for quick popups<br>"
+          . "you want centered, taking over the window<br>"
+          . "until dismissed somehow. Unlike hovers they<br>"
+          . "don't hover over their target.");
+    elm_win_inwin_content_set($inwin, $lb);
+    evas_object_show($lb);
+
+    evas_object_resize($win, 320, 240);
+    evas_object_show($win);
+}
+
+sub test_inwin2 {
+    my ($win, $bg, $inwin, $lb);
+
+    $win = elm_win_add(undef, "inwin", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Inwin");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $inwin = elm_win_inwin_add($win);
+    elm_object_style_set($inwin, "minimal_vertical");
+    evas_object_show($inwin);
+
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb,
+            "This is an \"inwin\" - a window in a<br>"
+          . "window. This is handy for quick popups<br>"
+          . "you want centered, taking over the window<br>"
+          . "until dismissed somehow. Unlike hovers they<br>"
+          . "don't hover over their target.<br>" . "<br>"
+          . "This inwin style compacts itself vertically<br>"
+          . "to the size of its contents minimum size.");
+    elm_win_inwin_content_set($inwin, $lb);
+    evas_object_show($lb);
+
+    evas_object_resize($win, 320, 240);
+    evas_object_show($win);
+}
+
+sub test_scaling {
+    my ($win, $bg, $bx, $bt);
+
+    $win = elm_win_add(undef, "scaling", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Scaling");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Scale: 0.5");
+    elm_object_scale_set($bt, 0.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Scale: 0.75");
+    elm_object_scale_set($bt, 0.75);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Scale: 1.0");
+    elm_object_scale_set($bt, 1.0);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Scale: 1.5");
+    elm_object_scale_set($bt, 1.5);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Scale: 2.0");
+    elm_object_scale_set($bt, 2.0);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Scale: 3.0");
+    elm_object_scale_set($bt, 3.0);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    evas_object_resize($win, 320, 320);
+    evas_object_show($win);
+}
+
+sub test_scaling2 {
+    my ($win, $bg, $bx, $fr, $lb);
+
+    $win = elm_win_add(undef, "scaling-2", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Scaling 2");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    $fr = elm_frame_add($win);
+    elm_object_scale_set($fr, 0.5);
+    elm_frame_label_set($fr, "Scale: 0.5");
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb, "Parent frame scale<br>" . "is 0.5. Child should<br>" . "inherit it.");
+    elm_frame_content_set($fr, $lb);
+    evas_object_show($lb);
+    elm_box_pack_end($bx, $fr);
+    evas_object_show($fr);
+
+    $fr = elm_frame_add($win);
+    elm_frame_label_set($fr, "Scale: 1.0");
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb, "Parent frame scale<br>" . "is 1.0. Child should<br>" . "inherit it.");
+    elm_frame_content_set($fr, $lb);
+    evas_object_show($lb);
+    elm_object_scale_set($fr, 1.0);
+    elm_box_pack_end($bx, $fr);
+    evas_object_show($fr);
+
+    $fr = elm_frame_add($win);
+    elm_frame_label_set($fr, "Scale: 2.0");
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb, "Parent frame scale<br>" . "is 2.0. Child should<br>" . "inherit it.");
+    elm_frame_content_set($fr, $lb);
+    evas_object_show($lb);
+    elm_object_scale_set($fr, 2.0);
+    elm_box_pack_end($bx, $fr);
+    evas_object_show($fr);
+
+    evas_object_resize($win, 320, 320);
+    evas_object_show($win);
+}
+
+sub test_slider {
+    my ($win, $bg, $bx, $sl, $ic);
+
+    $win = elm_win_add(undef, "slider", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Slider");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+
+    $sl = elm_slider_add($win);
+    elm_slider_label_set($sl, "Label");
+    elm_slider_icon_set($sl, $ic);
+    elm_slider_unit_format_set($sl, "%1.1f units");
+    elm_slider_span_size_set($sl, 120);
+    evas_object_size_hint_align_set($sl, EVAS_HINT_FILL, 0.5);
+    evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_box_pack_end($bx, $sl);
+    evas_object_show($ic);
+    evas_object_show($sl);
+
+    $sl = elm_slider_add($win);
+    elm_slider_label_set($sl, "Label 2");
+    elm_slider_span_size_set($sl, 80);
+    evas_object_size_hint_align_set($sl, EVAS_HINT_FILL, 0.5);
+    evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_slider_indicator_format_set($sl, "%3.0f");
+    elm_slider_min_max_set($sl, 50, 150);
+    elm_slider_value_set($sl, 80);
+    elm_slider_inverted_set($sl, 1);
+    evas_object_size_hint_align_set($sl, 0.5, 0.5);
+    evas_object_size_hint_weight_set($sl, 0.0, 0.0);
+    elm_box_pack_end($bx, $sl);
+    evas_object_show($ic);
+    evas_object_show($sl);
+
+    $sl = elm_slider_add($win);
+    elm_slider_label_set($sl, "Label 3");
+    elm_slider_unit_format_set($sl, "units");
+    elm_slider_span_size_set($sl, 40);
+    evas_object_size_hint_align_set($sl, EVAS_HINT_FILL, 0.5);
+    evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_slider_indicator_format_set($sl, "%3.0f");
+    elm_slider_min_max_set($sl, 50, 150);
+    elm_slider_value_set($sl, 80);
+    elm_slider_inverted_set($sl, 1);
+    elm_object_scale_set($sl, 2.0);
+    elm_box_pack_end($bx, $sl);
+    evas_object_show($ic);
+    evas_object_show($sl);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'small_logo'}, undef);
+    evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_HORIZONTAL, 1, 1);
+
+    $sl = elm_slider_add($win);
+    elm_slider_icon_set($sl, $ic);
+    elm_slider_label_set($sl, "Label 4");
+    elm_slider_unit_format_set($sl, "units");
+    elm_slider_span_size_set($sl, 60);
+    evas_object_size_hint_align_set($sl, 0.5, EVAS_HINT_FILL);
+    evas_object_size_hint_weight_set($sl, 0.0, EVAS_HINT_EXPAND);
+    elm_slider_indicator_format_set($sl, "%1.1f");
+    elm_slider_value_set($sl, 0.2);
+    elm_object_scale_set($sl, 1.0);
+    elm_slider_horizontal_set($sl, 0);
+    elm_box_pack_end($bx, $sl);
+    evas_object_show($ic);
+    evas_object_show($sl);
+
+    evas_object_show($win);
+}
+
 =pod
 
-void
-test_hoversel(void *data, Evas_Object *obj, void *event_info)
+typedef struct _Testitem
 {
-   Evas_Object *win, *bg, *bx, *bt, *ic;
-   char buf[PATH_MAX];
+   Elm_Genlist_Item *item;
+   int mode;
+   int onoff;
+} Testitem;
 
-   win = elm_win_add(undef, "hoversel", ELM_WIN_BASIC);
-   elm_win_title_set(win, "Hoversel");
+
+static Elm_Genlist_Item_Class itc1;
+char *gl_label_get(const void *data, Evas_Object *obj, const char *part)
+{
+   char buf[256];
+   snprintf(buf, sizeof(buf), "Item # %i", (int)data);
+   return strdup(buf);
+}
+
+Evas_Object *gl_icon_get(const void *data, Evas_Object *obj, const char *part)
+{
+   char buf[PATH_MAX];
+   Evas_Object *ic = elm_icon_add(obj);
+   snprintf(buf, sizeof(buf), "%s/images/logo_small.png", PACKAGE_DATA_DIR);
+   elm_icon_file_set(ic, buf, NULL);
+   evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+   return ic;
+}
+Eina_Bool gl_state_get(const void *data, Evas_Object *obj, const char *part)
+{
+   return EINA_FALSE;
+}
+void gl_del(const void *data, Evas_Object *obj)
+{
+}
+
+static void
+gl_sel(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("sel item data [%p] on genlist obj [%p], item pointer [%p]\n", data, obj, event_info);
+}
+
+=cut
+
+sub _move {
+    my ($gl, $obj, $ev) = @_;
+
+    #   Evas_Event_Mouse_Move *ev = event_info;
+    my $where = 0;
+
+    #   Elm_Genlist_Item *gli;
+    #   gli = elm_genlist_at_xy_item_get(gl, ev->cur.canvas.x, ev->cur.canvas.y, &where);
+    #   if (gli)
+    #     printf("over %p, where %i\n", elm_genlist_item_data_get(gli), where);
+    #   else
+    #     printf("over none, where %i\n", where);
+}
+
+sub _bt50_cb {
+    my ($data) = @_;
+    elm_genlist_item_bring_in($$data);
+}
+
+sub _bt1500_cb {
+    my ($data) = @_;
+    elm_genlist_item_middle_bring_in($$data);
+}
+
+sub test_genlist {
+    my ($win, $bg, $gl, $bt_50, $bt_1500, $bx);
+    my $over;
+    my $gli;
+    my $i;
+
+    $win = elm_win_add(undef, "genlist", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Genlist");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    $gl = elm_genlist_add($win);
+
+    # FIXME: This causes genlist to resize the horiz axis very slowly :(
+    # Reenable this and resize the window horizontally, then try to resize it back
+    #elm_genlist_horizontal_mode_set(gl, ELM_LIST_LIMIT);
+    evas_object_size_hint_weight_set($gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+    elm_box_pack_end($bx, $gl);
+    evas_object_show($gl);
+
+    $over = evas_object_rectangle_add(evas_object_evas_get($win));
+    evas_object_color_set($over, 0, 0, 0, 0);
+    evas_object_event_callback_add($over, EVAS_CALLBACK_MOUSE_MOVE, \&_move, \$gl);
+    evas_object_repeat_events_set($over, 1);
+    evas_object_show($over);
+    evas_object_size_hint_weight_set($over, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $over);
+
+    #itc1.item_style     = "default";
+    #itc1.func.label_get = gl_label_get;
+    #itc1.func.icon_get  = gl_icon_get;
+    #itc1.func.state_get = gl_state_get;
+    #itc1.func.del       = gl_del;
+
+    $bt_50 = elm_button_add($win);
+    elm_button_label_set($bt_50, "Go to 50");
+    evas_object_show($bt_50);
+    elm_box_pack_end($bx, $bt_50);
+
+    $bt_1500 = elm_button_add($win);
+    elm_button_label_set($bt_1500, "Go to 1500");
+    evas_object_show($bt_1500);
+    elm_box_pack_end($bx, $bt_1500);
+
+    for ($i = 0; $i < 2000; $i++) {
+
+        #         gli = elm_genlist_item_append(gl, &itc1,
+        my $j = $i * 10;
+        $gli = elm_genlist_item_append($gl, undef, $i, undef, ELM_GENLIST_ITEM_NONE, \&gl_sel, \($i * 10));
+
+        if ($i == 50) {
+            evas_object_smart_callback_add($bt_50, "clicked", \&_bt50_cb, \$gli);
+        }
+        elsif ($i == 1500) {
+            evas_object_smart_callback_add($bt_1500, "clicked", \&_bt1500_cb, \$gli);
+        }
+    }
+
+    evas_object_resize($win, 480, 800);
+    evas_object_show($win);
+
+}
+
+=pod
+
+/*************/
+
+static void
+my_gl_clear(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   elm_genlist_clear(gl);
+}
+
+static void
+my_gl_add(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli;
+   static int i = 0;
+
+   itc1.item_style     = "default";
+   itc1.func.label_get = gl_label_get;
+   itc1.func.icon_get  = gl_icon_get;
+   itc1.func.state_get = gl_state_get;
+   itc1.func.del       = gl_del;
+
+   gli = elm_genlist_item_append(gl, &itc1,
+				 (void *)i/* item data */,
+				 undef/* parent */,
+				 ELM_GENLIST_ITEM_NONE,
+				 gl_sel/* func */,
+				 (void *)(i * 10)/* func data */);
+   i++;
+}
+
+static void
+my_gl_insert_before(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli;
+   static int i = 0;
+   Elm_Genlist_Item *gli_selected;
+
+   itc1.item_style     = "default";
+   itc1.func.label_get = gl_label_get;
+   itc1.func.icon_get  = gl_icon_get;
+   itc1.func.state_get = gl_state_get;
+   itc1.func.del       = gl_del;
+
+   gli_selected = elm_genlist_selected_item_get(gl);
+   if(!gli_selected)
+   {
+       printf("no item selected\n");
+       return ;
+   }
+
+   gli = elm_genlist_item_insert_before(gl, &itc1,
+				 (void *)i/* item data */,
+				 gli_selected /* item before */,
+				 ELM_GENLIST_ITEM_NONE,
+				 gl_sel/* func */,
+				 (void *)(i * 10)/* func data */);
+   i++;
+}
+
+static void
+my_gl_insert_after(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli;
+   static int i = 0;
+   Elm_Genlist_Item *gli_selected;
+
+   itc1.item_style     = "default";
+   itc1.func.label_get = gl_label_get;
+   itc1.func.icon_get  = gl_icon_get;
+   itc1.func.state_get = gl_state_get;
+   itc1.func.del       = gl_del;
+
+   gli_selected = elm_genlist_selected_item_get(gl);
+   if(!gli_selected)
+   {
+       printf("no item selected\n");
+       return ;
+   }
+
+   gli = elm_genlist_item_insert_after(gl, &itc1,
+				 (void *)i/* item data */,
+				 gli_selected /* item after */,
+				 ELM_GENLIST_ITEM_NONE,
+				 gl_sel/* func */,
+				 (void *)(i * 10)/* func data */);
+   i++;
+}
+
+static void
+my_gl_del(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli = elm_genlist_selected_item_get(gl);
+   if (!gli)
+     {
+	printf("no item selected\n");
+	return;
+     }
+   elm_genlist_item_del(gli);
+}
+
+static void
+my_gl_disable(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli = elm_genlist_selected_item_get(gl);
+   if (!gli)
+     {
+	printf("no item selected\n");
+	return;
+     }
+   elm_genlist_item_disabled_set(gli, 1);
+   elm_genlist_item_selected_set(gli, 0);
+   elm_genlist_item_update(gli);
+}
+
+static void
+my_gl_update_all(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   int i = 0;
+   Elm_Genlist_Item *it = elm_genlist_first_item_get(gl);
+   while (it)
+     {
+	elm_genlist_item_update(it);
+	printf("%i\n", i);
+	i++;
+	it = elm_genlist_item_next_get(it);
+     }
+}
+
+static void
+my_gl_first(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli = elm_genlist_first_item_get(gl);
+   if (!gli) return;
+   elm_genlist_item_show(gli);
+   elm_genlist_item_selected_set(gli, 1);
+}
+
+static void
+my_gl_last(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *gl = data;
+   Elm_Genlist_Item *gli = elm_genlist_last_item_get(gl);
+   if (!gli) return;
+   elm_genlist_item_show(gli);
+   elm_genlist_item_selected_set(gli, 1);
+}
+
+void
+test_genlist2(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *win, *bg, *gl, *bx, *bx2, *bx3, *bt;
+   Elm_Genlist_Item *gli[10];
+   char buf[PATH_MAX];
+   int i;
+
+   win = elm_win_add(undef, "genlist-2", ELM_WIN_BASIC);
+   elm_win_title_set(win, "Genlist 2");
+   elm_win_autodel_set(win, 1);
+
+   bg = elm_bg_add(win);
+   snprintf(buf, sizeof(buf), "%s/images/plant_01.jpg", PACKAGE_DATA_DIR);
+   elm_bg_file_set(bg, buf, undef);
+   elm_win_resize_object_add(win, bg);
+   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(bg);
+
+   bx = elm_box_add(win);
+   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add(win, bx);
+   evas_object_show(bx);
+
+   gl = elm_genlist_add(win);
+   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(gl);
+
+   itc1.item_style     = "default";
+   itc1.func.label_get = gl_label_get;
+   itc1.func.icon_get  = gl_icon_get;
+   itc1.func.state_get = gl_state_get;
+   itc1.func.del       = gl_del;
+
+   gli[0] = elm_genlist_item_append(gl, &itc1,
+				    (void *)1001/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+				    (void *)1001/* func data */);
+   gli[1] = elm_genlist_item_append(gl, &itc1,
+				    (void *)1002/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+				    (void *)1002/* func data */);
+   gli[2] = elm_genlist_item_append(gl, &itc1,
+				    (void *)1003/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+				    (void *)1003/* func data */);
+   gli[3] = elm_genlist_item_prepend(gl, &itc1,
+				     (void *)1004/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+				     (void *)1004/* func data */);
+   gli[4] = elm_genlist_item_prepend(gl, &itc1,
+				     (void *)1005/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+				     (void *)1005/* func data */);
+   gli[5] = elm_genlist_item_insert_before(gl, &itc1,
+					   (void *)1006/* item data */, gli[2]/* rel */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					   (void *)1006/* func data */);
+   gli[6] = elm_genlist_item_insert_after(gl, &itc1,
+					  (void *)1007/* item data */, gli[2]/* rel */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					  (void *)1007/* func data */);
+
+   elm_box_pack_end(bx, gl);
+
+   bx2 = elm_box_add(win);
+   elm_box_horizontal_set(bx2, 1);
+   elm_box_homogenous_set(bx2, 1);
+   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "/\\");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_first, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "\\/");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_last, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "#");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_disable, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "U");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update_all, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   elm_box_pack_end(bx, bx2);
+   evas_object_show(bx2);
+
+   bx2 = elm_box_add(win);
+   elm_box_horizontal_set(bx2, 1);
+   elm_box_homogenous_set(bx2, 1);
+   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "X");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_clear, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "+");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_add, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "-");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_del, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   elm_box_pack_end(bx, bx2);
+   evas_object_show(bx2);
+
+   bx3 = elm_box_add(win);
+   elm_box_horizontal_set(bx3, 1);
+   elm_box_homogenous_set(bx3, 1);
+   evas_object_size_hint_weight_set(bx3, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx3, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "+ before");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_insert_before, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx3, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "+ after");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_insert_after, gl);
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx3, bt);
+   evas_object_show(bt);
+
+   elm_box_pack_end(bx, bx3);
+   evas_object_show(bx3);
+
+
+   evas_object_resize(win, 320, 320);
+   evas_object_show(win);
+}
+
+/*************/
+
+static Elm_Genlist_Item_Class itc2;
+char *gl2_label_get(const void *data, Evas_Object *obj, const char *part)
+{
+   const Testitem *tit = data;
+   char buf[256];
+   snprintf(buf, sizeof(buf), "Item mode %i", tit->mode);
+   return strdup(buf);
+}
+Evas_Object *gl2_icon_get(const void *data, Evas_Object *obj, const char *part)
+{
+   const Testitem *tit = data;
+   char buf[PATH_MAX];
+   Evas_Object *ic = elm_icon_add(obj);
+   if (!strcmp(part, "elm.swallow.icon"))
+     {
+	if ((tit->mode & 0x3) == 0)
+	  snprintf(buf, sizeof(buf), "%s/images/logo_small.png", PACKAGE_DATA_DIR);
+	else if ((tit->mode & 0x3) == 1)
+	  snprintf(buf, sizeof(buf), "%s/images/logo.png", PACKAGE_DATA_DIR);
+	else if ((tit->mode & 0x3) == 2)
+	  snprintf(buf, sizeof(buf), "%s/images/panel_01.jpg", PACKAGE_DATA_DIR);
+	else if ((tit->mode & 0x3) == 3)
+	  snprintf(buf, sizeof(buf), "%s/images/rock_01.jpg", PACKAGE_DATA_DIR);
+	elm_icon_file_set(ic, buf, undef);
+     }
+   else if (!strcmp(part, "elm.swallow.end"))
+     {
+	if ((tit->mode & 0x3) == 0)
+	  snprintf(buf, sizeof(buf), "%s/images/sky_01.jpg", PACKAGE_DATA_DIR);
+	else if ((tit->mode & 0x3) == 1)
+	  snprintf(buf, sizeof(buf), "%s/images/sky_02.jpg", PACKAGE_DATA_DIR);
+	else if ((tit->mode & 0x3) == 2)
+	  snprintf(buf, sizeof(buf), "%s/images/sky_03.jpg", PACKAGE_DATA_DIR);
+	else if ((tit->mode & 0x3) == 3)
+	  snprintf(buf, sizeof(buf), "%s/images/sky_04.jpg", PACKAGE_DATA_DIR);
+	elm_icon_file_set(ic, buf, undef);
+     }
+   evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+   return ic;
+}
+Eina_Bool gl2_state_get(const void *data, Evas_Object *obj, const char *part)
+{
+   return EINA_FALSE;
+}
+void gl2_del(const void *data, Evas_Object *obj)
+{
+}
+
+static void
+my_gl_update(void *data, Evas_Object *obj, void *event_info)
+{
+   Testitem *tit = data;
+   tit->mode++;
+   elm_genlist_item_update(tit->item);
+}
+
+void
+test_genlist3(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *win, *bg, *gl, *bx, *bx2, *bt;
+   static Testitem tit[3];
+   int i;
+
+   win = elm_win_add(undef, "genlist-3", ELM_WIN_BASIC);
+   elm_win_title_set(win, "Genlist 3");
    elm_win_autodel_set(win, 1);
 
    bg = elm_bg_add(win);
@@ -1671,1023 +2967,873 @@ test_hoversel(void *data, Evas_Object *obj, void *event_info)
    evas_object_show(bg);
 
    bx = elm_box_add(win);
-   elm_win_resize_object_add(win, bx);
    evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add(win, bx);
    evas_object_show(bx);
 
-   bt = elm_hoversel_add(win);
-   elm_hoversel_hover_parent_set(bt, win);
-   elm_hoversel_label_set(bt, "Labels");
-   elm_hoversel_item_add(bt, "Item 1", undef, ELM_ICON_NONE, undef, undef);
-   elm_hoversel_item_add(bt, "Item 2", undef, ELM_ICON_NONE, undef, undef);
-   elm_hoversel_item_add(bt, "Item 3", undef, ELM_ICON_NONE, undef, undef);
-   elm_hoversel_item_add(bt, "Item 4 - Long Label Here", undef, ELM_ICON_NONE, undef, undef);
-   evas_object_size_hint_weight_set(bt, 0.0, 0.0);
-   evas_object_size_hint_align_set(bt, 0.5, 0.5);
-   elm_box_pack_end(bx, bt);
+   gl = elm_genlist_add(win);
+   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(gl);
+
+   itc2.item_style     = "default";
+   itc2.func.label_get = gl2_label_get;
+   itc2.func.icon_get  = gl2_icon_get;
+   itc2.func.state_get = gl2_state_get;
+   itc2.func.del       = gl2_del;
+
+   tit[0].mode = 0;
+   tit[0].item = elm_genlist_item_append(gl, &itc2,
+					 &(tit[0])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+   tit[1].mode = 1;
+   tit[1].item = elm_genlist_item_append(gl, &itc2,
+					 &(tit[1])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+   tit[2].mode = 2;
+   tit[2].item = elm_genlist_item_append(gl, &itc2,
+					 &(tit[2])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+
+   elm_box_pack_end(bx, gl);
+   evas_object_show(bx2);
+
+   bx2 = elm_box_add(win);
+   elm_box_horizontal_set(bx2, 1);
+   elm_box_homogenous_set(bx2, 1);
+   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[1]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[0]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
    evas_object_show(bt);
 
-   bt = elm_hoversel_add(win);
-   elm_hoversel_hover_parent_set(bt, win);
-   elm_hoversel_label_set(bt, "Some Icons");
-   elm_hoversel_item_add(bt, "Item 1", undef, ELM_ICON_NONE, undef, undef);
-   elm_hoversel_item_add(bt, "Item 2", undef, ELM_ICON_NONE, undef, undef);
-   elm_hoversel_item_add(bt, "Item 3", "home", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 4", "close", ELM_ICON_STANDARD, undef, undef);
-   evas_object_size_hint_weight_set(bt, 0.0, 0.0);
-   evas_object_size_hint_align_set(bt, 0.5, 0.5);
-   elm_box_pack_end(bx, bt);
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[2]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[1]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
    evas_object_show(bt);
 
-   bt = elm_hoversel_add(win);
-   elm_hoversel_hover_parent_set(bt, win);
-   elm_hoversel_label_set(bt, "All Icons");
-   elm_hoversel_item_add(bt, "Item 1", "apps", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 2", "arrow_down", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 3", "home", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 4", "close", ELM_ICON_STANDARD, undef, undef);
-   evas_object_size_hint_weight_set(bt, 0.0, 0.0);
-   evas_object_size_hint_align_set(bt, 0.5, 0.5);
-   elm_box_pack_end(bx, bt);
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[3]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[2]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
    evas_object_show(bt);
 
-   bt = elm_hoversel_add(win);
-   elm_hoversel_hover_parent_set(bt, win);
-   elm_hoversel_label_set(bt, "All Icons");
-   elm_hoversel_item_add(bt, "Item 1", "apps", ELM_ICON_STANDARD, undef, undef);
-   snprintf(buf, sizeof(buf), "%s/images/sky_02.jpg", PACKAGE_DATA_DIR);
-   elm_hoversel_item_add(bt, "Item 2", buf, ELM_ICON_FILE, undef, undef);
-   elm_hoversel_item_add(bt, "Item 3", "home", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 4", "close", ELM_ICON_STANDARD, undef, undef);
-   evas_object_size_hint_weight_set(bt, 0.0, 0.0);
-   evas_object_size_hint_align_set(bt, 0.5, 0.5);
-   elm_box_pack_end(bx, bt);
+   elm_box_pack_end(bx, bx2);
+   evas_object_show(bx2);
+
+   evas_object_resize(win, 320, 320);
+   evas_object_show(win);
+}
+
+/*************/
+
+static void
+my_gl_item_check_changed(void *data, Evas_Object *obj, void *event_info)
+{
+   Testitem *tit = data;
+   tit->onoff = elm_check_state_get(obj);
+   printf("item %p onoff = %i\n", tit, tit->onoff);
+}
+
+static Elm_Genlist_Item_Class itc3;
+char *gl3_label_get(const void *data, Evas_Object *obj, const char *part)
+{
+   const Testitem *tit = data;
+   char buf[256];
+   snprintf(buf, sizeof(buf), "Item mode %i", tit->mode);
+   return strdup(buf);
+}
+Evas_Object *gl3_icon_get(const void *data, Evas_Object *obj, const char *part)
+{
+   const Testitem *tit = data;
+   char buf[PATH_MAX];
+   if (!strcmp(part, "elm.swallow.icon"))
+     {
+	Evas_Object *bx = elm_box_add(obj);
+	Evas_Object *ic;
+	ic = elm_icon_add(obj);
+	snprintf(buf, sizeof(buf), "%s/images/logo_small.png", PACKAGE_DATA_DIR);
+	elm_icon_file_set(ic, buf, undef);
+	elm_icon_scale_set(ic, 0, 0);
+	evas_object_show(ic);
+	elm_box_pack_end(bx, ic);
+	ic = elm_icon_add(obj);
+	elm_icon_file_set(ic, buf, undef);
+	elm_icon_scale_set(ic, 0, 0);
+	evas_object_show(ic);
+	elm_box_pack_end(bx, ic);
+        elm_box_horizontal_set(bx, 1);
+	evas_object_show(bx);
+	return bx;
+     }
+   else if (!strcmp(part, "elm.swallow.end"))
+     {
+	Evas_Object *ck;
+	ck = elm_check_add(obj);
+	evas_object_propagate_events_set(ck, 0);
+	elm_check_state_set(ck, tit->onoff);
+	evas_object_smart_callback_add(ck, "changed", my_gl_item_check_changed, data);
+	evas_object_show(ck);
+	return ck;
+     }
+   return undef;
+}
+Eina_Bool gl3_state_get(const void *data, Evas_Object *obj, const char *part)
+{
+   return EINA_FALSE;
+}
+void gl3_del(const void *data, Evas_Object *obj)
+{
+}
+
+void
+test_genlist4(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *win, *bg, *gl, *bx, *bx2, *bt;
+   static Testitem tit[3];
+   int i;
+
+   win = elm_win_add(undef, "genlist-4", ELM_WIN_BASIC);
+   elm_win_title_set(win, "Genlist 4");
+   elm_win_autodel_set(win, 1);
+
+   bg = elm_bg_add(win);
+   elm_win_resize_object_add(win, bg);
+   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(bg);
+
+   bx = elm_box_add(win);
+   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add(win, bx);
+   evas_object_show(bx);
+
+   gl = elm_genlist_add(win);
+   elm_genlist_multi_select_set(gl, 1);
+   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(gl);
+
+   itc3.item_style     = "default";
+   itc3.func.label_get = gl3_label_get;
+   itc3.func.icon_get  = gl3_icon_get;
+   itc3.func.state_get = gl3_state_get;
+   itc3.func.del       = gl3_del;
+
+   tit[0].mode = 0;
+   tit[0].item = elm_genlist_item_append(gl, &itc3,
+					 &(tit[0])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+   tit[1].mode = 1;
+   tit[1].item = elm_genlist_item_append(gl, &itc3,
+					 &(tit[1])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+   tit[2].mode = 2;
+   tit[2].item = elm_genlist_item_append(gl, &itc3,
+					 &(tit[2])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+
+   elm_box_pack_end(bx, gl);
+   evas_object_show(bx2);
+
+   bx2 = elm_box_add(win);
+   elm_box_horizontal_set(bx2, 1);
+   elm_box_homogenous_set(bx2, 1);
+   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[1]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[0]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
    evas_object_show(bt);
 
-   bt = elm_hoversel_add(win);
-   elm_hoversel_hover_parent_set(bt, win);
-   elm_hoversel_label_set(bt, "Disabled Hoversel");
-   elm_hoversel_item_add(bt, "Item 1", "apps", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 2", "close", ELM_ICON_STANDARD, undef, undef);
-   elm_object_disabled_set(bt, 1);
-   evas_object_size_hint_weight_set(bt, 0.0, 0.0);
-   evas_object_size_hint_align_set(bt, 0.5, 0.5);
-   elm_box_pack_end(bx, bt);
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[2]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[1]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
    evas_object_show(bt);
 
-   bt = elm_hoversel_add(win);
-   elm_hoversel_hover_parent_set(bt, win);
-   elm_hoversel_label_set(bt, "Icon + Label");
-
-   ic = elm_icon_add(win);
-   snprintf(buf, sizeof(buf), "%s/images/sky_03.jpg", PACKAGE_DATA_DIR);
-   elm_icon_file_set(ic, buf, undef);
-   elm_hoversel_icon_set(bt, ic);
-   evas_object_show(ic);
-
-   elm_hoversel_item_add(bt, "Item 1", "apps", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 2", "arrow_down", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 3", "home", ELM_ICON_STANDARD, undef, undef);
-   elm_hoversel_item_add(bt, "Item 4", "close", ELM_ICON_STANDARD, undef, undef);
-   evas_object_size_hint_weight_set(bt, 0.0, 0.0);
-   evas_object_size_hint_align_set(bt, 0.5, 0.5);
-   elm_box_pack_end(bx, bt);
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[3]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[2]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
    evas_object_show(bt);
 
-   evas_object_resize(win, 320, 300);
+   elm_box_pack_end(bx, bx2);
+   evas_object_show(bx2);
 
+   evas_object_resize(win, 320, 320);
+   evas_object_show(win);
+}
+
+
+/*************/
+static void
+my_gl_item_check_changed2(void *data, Evas_Object *obj, void *event_info)
+{
+   Testitem *tit = data;
+   tit->onoff = elm_check_state_get(obj);
+   printf("item %p onoff = %i\n", tit, tit->onoff);
+}
+
+static Elm_Genlist_Item_Class itc5;
+char *gl5_label_get(const void *data, Evas_Object *obj, const char *part)
+{
+   const Testitem *tit = data;
+   char buf[256];
+   if (!strcmp(part, "elm.text"))
+     {
+	snprintf(buf, sizeof(buf), "Item mode %i", tit->mode);
+     }
+   else if (!strcmp(part, "elm.text.sub"))
+     {
+	snprintf(buf, sizeof(buf), "%i bottles on the wall", tit->mode);
+     }
+   return strdup(buf);
+}
+Evas_Object *gl5_icon_get(const void *data, Evas_Object *obj, const char *part)
+{
+   const Testitem *tit = data;
+   char buf[PATH_MAX];
+   if (!strcmp(part, "elm.swallow.icon"))
+     {
+	Evas_Object *bx = elm_box_add(obj);
+	Evas_Object *ic;
+	elm_box_horizontal_set(bx, 1);
+	ic = elm_icon_add(obj);
+	snprintf(buf, sizeof(buf), "%s/images/logo_small.png", PACKAGE_DATA_DIR);
+	elm_icon_file_set(ic, buf, undef);
+	elm_icon_scale_set(ic, 0, 0);
+	evas_object_show(ic);
+	elm_box_pack_end(bx, ic);
+	ic = elm_icon_add(obj);
+	elm_icon_file_set(ic, buf, undef);
+	elm_icon_scale_set(ic, 0, 0);
+	evas_object_show(ic);
+	elm_box_pack_end(bx, ic);
+        elm_box_horizontal_set(bx, 1);
+	evas_object_show(bx);
+	return bx;
+     }
+   else if (!strcmp(part, "elm.swallow.end"))
+     {
+	Evas_Object *ck;
+	ck = elm_check_add(obj);
+	evas_object_propagate_events_set(ck, 0);
+	elm_check_state_set(ck, tit->onoff);
+	evas_object_smart_callback_add(ck, "changed", my_gl_item_check_changed2, data);
+	evas_object_show(ck);
+	return ck;
+     }
+   return undef;
+}
+Eina_Bool gl5_state_get(const void *data, Evas_Object *obj, const char *part)
+{
+   return EINA_FALSE;
+}
+void gl5_del(const void *data, Evas_Object *obj)
+{
+}
+
+static void
+item_drag_up(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("drag up\n");
+}
+
+static void
+item_drag_down(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("drag down\n");
+}
+
+static void
+item_drag_left(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("drag left\n");
+}
+
+static void
+item_drag_right(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("drag right\n");
+}
+
+static void
+item_drag(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("drag\n");
+}
+
+static void
+item_drag_stop(void *data, Evas_Object *obj, void *event_info)
+{
+   printf("drag stop\n");
+}
+
+void
+test_genlist5(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *win, *bg, *gl, *bx, *bx2, *bt;
+   static Testitem tit[3];
+   int i;
+
+   win = elm_win_add(undef, "genlist-5", ELM_WIN_BASIC);
+   elm_win_title_set(win, "Genlist 5");
+   elm_win_autodel_set(win, 1);
+
+   bg = elm_bg_add(win);
+   elm_win_resize_object_add(win, bg);
+   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(bg);
+
+   bx = elm_box_add(win);
+   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add(win, bx);
+   evas_object_show(bx);
+
+   gl = elm_genlist_add(win);
+   elm_genlist_always_select_mode_set(gl, 1);
+   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(gl);
+   itc5.item_style     = "double_label";
+   itc5.func.label_get = gl5_label_get;
+   itc5.func.icon_get  = gl5_icon_get;
+   itc5.func.state_get = gl5_state_get;
+   itc5.func.del       = gl5_del;
+
+   tit[0].mode = 0;
+   tit[0].item = elm_genlist_item_append(gl, &itc5,
+					 &(tit[0])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+   tit[1].mode = 1;
+   tit[1].item = elm_genlist_item_append(gl, &itc5,
+					 &(tit[1])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+   tit[2].mode = 2;
+   tit[2].item = elm_genlist_item_append(gl, &itc5,
+					 &(tit[2])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
+					 undef/* func data */);
+
+   elm_box_pack_end(bx, gl);
+   evas_object_show(bx2);
+
+   evas_object_smart_callback_add(gl, "drag,start,up", item_drag_up, undef);
+   evas_object_smart_callback_add(gl, "drag,start,down", item_drag_down, undef);
+   evas_object_smart_callback_add(gl, "drag,start,left", item_drag_left, undef);
+   evas_object_smart_callback_add(gl, "drag,start,right", item_drag_right, undef);
+   evas_object_smart_callback_add(gl, "drag", item_drag, undef);
+   evas_object_smart_callback_add(gl, "drag,stop", item_drag_stop, undef);
+
+   bx2 = elm_box_add(win);
+   elm_box_horizontal_set(bx2, 1);
+   elm_box_homogenous_set(bx2, 1);
+   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[1]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[0]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[2]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[1]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[3]");
+   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[2]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   elm_box_pack_end(bx, bx2);
+   evas_object_show(bx2);
+
+   evas_object_resize(win, 320, 320);
+   evas_object_show(win);
+}
+
+/*************/
+
+static Elm_Genlist_Item_Class itc4;
+
+static void
+gl4_sel(void *data, Evas_Object *obj, void *event_info)
+{
+}
+static void
+gl4_exp(void *data, Evas_Object *obj, void *event_info)
+{
+   Elm_Genlist_Item *it = event_info;
+   Evas_Object *gl = elm_genlist_item_genlist_get(it);
+   int val = (int)elm_genlist_item_data_get(it);
+   val *= 10;
+   elm_genlist_item_append(gl, &itc4,
+			   (void *)(val + 1)/* item data */, it/* parent */, ELM_GENLIST_ITEM_NONE, gl4_sel/* func */,
+			   undef/* func data */);
+   elm_genlist_item_append(gl, &itc4,
+			   (void *)(val + 2)/* item data */, it/* parent */, ELM_GENLIST_ITEM_NONE, gl4_sel/* func */,
+			   undef/* func data */);
+   elm_genlist_item_append(gl, &itc4,
+			   (void *)(val + 3)/* item data */, it/* parent */, ELM_GENLIST_ITEM_SUBITEMS, gl4_sel/* func */,
+			   undef/* func data */);
+}
+static void
+gl4_con(void *data, Evas_Object *obj, void *event_info)
+{
+   Elm_Genlist_Item *it = event_info;
+   elm_genlist_item_subitems_clear(it);
+}
+
+static void
+gl4_exp_req(void *data, Evas_Object *obj, void *event_info)
+{
+   Elm_Genlist_Item *it = event_info;
+   elm_genlist_item_expanded_set(it, 1);
+}
+static void
+gl4_con_req(void *data, Evas_Object *obj, void *event_info)
+{
+   Elm_Genlist_Item *it = event_info;
+   elm_genlist_item_expanded_set(it, 0);
+}
+
+char *gl4_label_get(const void *data, Evas_Object *obj, const char *part)
+{
+   char buf[256];
+   snprintf(buf, sizeof(buf), "Item mode %i", (int)data);
+   return strdup(buf);
+}
+Evas_Object *gl4_icon_get(const void *data, Evas_Object *obj, const char *part)
+{
+   char buf[PATH_MAX];
+   if (!strcmp(part, "elm.swallow.icon"))
+     {
+	Evas_Object *ic = elm_icon_add(obj);
+	snprintf(buf, sizeof(buf), "%s/images/logo_small.png", PACKAGE_DATA_DIR);
+	elm_icon_file_set(ic, buf, undef);
+	evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+	evas_object_show(ic);
+	return ic;
+     }
+   else if (!strcmp(part, "elm.swallow.end"))
+     {
+	Evas_Object *ck;
+	ck = elm_check_add(obj);
+	evas_object_show(ck);
+	return ck;
+     }
+   return undef;
+}
+Eina_Bool gl4_state_get(const void *data, Evas_Object *obj, const char *part)
+{
+   return EINA_FALSE;
+}
+void gl4_del(const void *data, Evas_Object *obj)
+{
+}
+
+void
+test_genlist6(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *win, *bg, *gl, *bx, *bx2, *bt;
+
+   win = elm_win_add(undef, "genlist-tree", ELM_WIN_BASIC);
+   elm_win_title_set(win, "Genlist Tree");
+   elm_win_autodel_set(win, 1);
+
+   bg = elm_bg_add(win);
+   elm_win_resize_object_add(win, bg);
+   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(bg);
+
+   bx = elm_box_add(win);
+   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add(win, bx);
+   evas_object_show(bx);
+
+   gl = elm_genlist_add(win);
+   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(gl);
+
+   itc4.item_style     = "default";
+   itc4.func.label_get = gl4_label_get;
+   itc4.func.icon_get  = gl4_icon_get;
+   itc4.func.state_get = gl4_state_get;
+   itc4.func.del       = gl4_del;
+
+   elm_genlist_item_append(gl, &itc4,
+			   (void *)1/* item data */, undef/* parent */, ELM_GENLIST_ITEM_SUBITEMS, gl4_sel/* func */,
+			   undef/* func data */);
+   elm_genlist_item_append(gl, &itc4,
+			   (void *)2/* item data */, undef/* parent */, ELM_GENLIST_ITEM_SUBITEMS, gl4_sel/* func */,
+			   undef/* func data */);
+   elm_genlist_item_append(gl, &itc4,
+			   (void *)3/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl4_sel/* func */,
+			   undef/* func data */);
+
+   evas_object_smart_callback_add(gl, "expand,request", gl4_exp_req, gl);
+   evas_object_smart_callback_add(gl, "contract,request", gl4_con_req, gl);
+   evas_object_smart_callback_add(gl, "expanded", gl4_exp, gl);
+   evas_object_smart_callback_add(gl, "contracted", gl4_con, gl);
+
+   elm_box_pack_end(bx, gl);
+   evas_object_show(bx2);
+
+   bx2 = elm_box_add(win);
+   elm_box_horizontal_set(bx2, 1);
+   elm_box_homogenous_set(bx2, 1);
+   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[1]");
+//   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[0]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[2]");
+//   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[1]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   bt = elm_button_add(win);
+   elm_button_label_set(bt, "[3]");
+//   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[2]));
+   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end(bx2, bt);
+   evas_object_show(bt);
+
+   elm_box_pack_end(bx, bx2);
+   evas_object_show(bx2);
+
+   evas_object_resize(win, 320, 320);
    evas_object_show(win);
 }
 
 =cut
 
-sub my_show_it
-{
-#   elm_list_item_show(data);
+sub test_check {
+    my ($win, $bg, $bx, $ic, $ck);
+
+    $win = elm_win_add(undef, "check", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Checks");
+    elm_win_autodel_set($win, 1);
+
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+    $ck = elm_check_add($win);
+    evas_object_size_hint_weight_set($ck, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($ck, EVAS_HINT_FILL, 0.5);
+    elm_check_label_set($ck, "Icon sized to check");
+    elm_check_icon_set($ck, $ic);
+    elm_check_state_set($ck, 1);
+    elm_box_pack_end($bx, $ck);
+    evas_object_show($ck);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    $ck = elm_check_add($win);
+    elm_check_label_set($ck, "Icon no scale");
+    elm_check_icon_set($ck, $ic);
+    elm_box_pack_end($bx, $ck);
+    evas_object_show($ck);
+    evas_object_show($ic);
+
+    $ck = elm_check_add($win);
+    elm_check_label_set($ck, "Label Only");
+    elm_box_pack_end($bx, $ck);
+    evas_object_show($ck);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+    $ck = elm_check_add($win);
+    evas_object_size_hint_weight_set($ck, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($ck, EVAS_HINT_FILL, 0.5);
+    elm_check_label_set($ck, "Disabled check");
+    elm_check_icon_set($ck, $ic);
+    elm_check_state_set($ck, 1);
+    elm_box_pack_end($bx, $ck);
+    elm_object_disabled_set($ck, 1);
+    evas_object_show($ck);
+    evas_object_show($ic);
+
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
+    $ck = elm_check_add($win);
+    elm_check_icon_set($ck, $ic);
+    elm_box_pack_end($bx, $ck);
+    evas_object_show($ck);
+    evas_object_show($ic);
+
+    evas_object_show($win);
 }
 
-sub test_list
-#(void *data, Evas_Object *obj, void *event_info)
-{
-   my ($win, $bg, $li, $ic, $ic2, $bx, $tb2, $bt);
-   my ($it1, $it2, $it3, $it4, $it5);
+sub test_radio {
+    my ($win, $bg, $bx, $ic, $rd, $rdg);
 
-   $win = elm_win_add(undef, "list", ELM_WIN_BASIC);
-   elm_win_title_set($win, "List");
-   elm_win_autodel_set($win, 1);
+    $win = elm_win_add(undef, "radio", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Radios");
+    elm_win_autodel_set($win, 1);
 
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
 
-   $li = elm_list_add($win);
-   elm_win_resize_object_add($win, $li);
-   evas_object_size_hint_weight_set($li, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    elm_win_resize_object_add($win, $bx);
+    evas_object_show($bx);
 
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_icon_scale_set($ic, 1, 1);
-   $it1 = elm_list_item_append($li, "Hello", $ic, undef,  undef, undef);
-   $ic = elm_icon_add($win);
-   elm_icon_scale_set($ic, 0, 0);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_list_item_append($li, "world", $ic, undef,  undef, undef);
-   $ic = elm_icon_add($win);
-   elm_icon_standard_set($ic, "edit");
-   elm_icon_scale_set($ic, 0, 0);
-   elm_list_item_append($li, ".", $ic, undef,  undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
 
-   $ic = elm_icon_add($win);
-   elm_icon_standard_set($ic, "delete");
-   elm_icon_scale_set($ic, 0, 0);
-   $ic2 = elm_icon_add($win);
-   elm_icon_standard_set($ic2, "clock");
-   elm_icon_scale_set($ic2, 0, 0);
-   $it2 = elm_list_item_append($li, "How", $ic, $ic2,  undef, undef);
+    $rd = elm_radio_add($win);
+    elm_radio_state_value_set($rd, 0);
+    evas_object_size_hint_weight_set($rd, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set($rd, EVAS_HINT_FILL, 0.5);
+    elm_radio_label_set($rd, "Icon sized to radio");
+    elm_radio_icon_set($rd, $ic);
+    elm_box_pack_end($bx, $rd);
+    evas_object_show($rd);
+    evas_object_show($ic);
+    $rdg = $rd;
 
-   $bx = elm_box_add($win);
-   elm_box_horizontal_set($bx, 1);
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
 
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.5, 0.5);
-   elm_box_pack_end($bx, $ic);
-   evas_object_show($ic);
+    $rd = elm_radio_add($win);
+    elm_radio_state_value_set($rd, 1);
+    elm_radio_group_add($rd, $rdg);
+    elm_radio_label_set($rd, "Icon no scale");
+    elm_radio_icon_set($rd, $ic);
+    elm_box_pack_end($bx, $rd);
+    evas_object_show($rd);
+    evas_object_show($ic);
 
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.5, 0.0);
-   elm_box_pack_end($bx, $ic);
-   evas_object_show($ic);
+    $rd = elm_radio_add($win);
+    elm_radio_state_value_set($rd, 2);
+    elm_radio_group_add($rd, $rdg);
+    elm_radio_label_set($rd, "Label Only");
+    elm_box_pack_end($bx, $rd);
+    evas_object_show($rd);
 
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.0, EVAS_HINT_EXPAND);
-   elm_box_pack_end($bx, $ic);
-   evas_object_show($ic);
-   elm_list_item_append($li, "are", $bx, undef,  undef, undef);
+    $rd = elm_radio_add($win);
+    elm_radio_state_value_set($rd, 3);
+    elm_radio_group_add($rd, $rdg);
+    elm_radio_label_set($rd, "Disabled");
+    elm_object_disabled_set($rd, 1);
+    elm_box_pack_end($bx, $rd);
+    evas_object_show($rd);
 
-   elm_list_item_append($li, "you", undef, undef,  undef, undef);
-   $it3 = elm_list_item_append($li, "doing", undef, undef,  undef, undef);
-   elm_list_item_append($li, "out", undef, undef,  undef, undef);
-   elm_list_item_append($li, "there", undef, undef,  undef, undef);
-   elm_list_item_append($li, "today", undef, undef,  undef, undef);
-   elm_list_item_append($li, "?", undef, undef,  undef, undef);
-   $it4 = elm_list_item_append($li, "Here", undef, undef,  undef, undef);
-   elm_list_item_append($li, "are", undef, undef,  undef, undef);
-   elm_list_item_append($li, "some", undef, undef,  undef, undef);
-   elm_list_item_append($li, "more", undef, undef,  undef, undef);
-   elm_list_item_append($li, "items", undef, undef,  undef, undef);
-   elm_list_item_append($li, "Is this label long enough?", undef, undef,  undef, undef);
-   $it5 = elm_list_item_append($li, "Maybe this one is even longer so we can test long long items.", undef, undef,  undef, undef);
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
 
-   elm_list_go($li);
+    $rd = elm_radio_add($win);
+    elm_radio_state_value_set($rd, 4);
+    elm_radio_group_add($rd, $rdg);
+    elm_radio_icon_set($rd, $ic);
+    elm_box_pack_end($bx, $rd);
+    evas_object_show($rd);
+    evas_object_show($ic);
 
-   evas_object_show($li);
-   
-   $tb2 = elm_table_add($win);
-   evas_object_size_hint_weight_set($tb2, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $tb2);
+    $ic = elm_icon_add($win);
+    elm_icon_file_set($ic, $images{'logo_small'}, undef);
+    elm_icon_scale_set($ic, 0, 0);
 
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Hello");
-   evas_object_smart_callback_add($bt, "clicked", \&my_show_it, $it1);
-   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($bt, 0.9, 0.5);
-   elm_table_pack($tb2, $bt, 0, 0, 1, 1);
-   evas_object_show($bt);
+    $rd = elm_radio_add($win);
+    elm_radio_state_value_set($rd, 5);
+    elm_radio_group_add($rd, $rdg);
+    elm_radio_icon_set($rd, $ic);
+    elm_object_disabled_set($rd, 1);
+    elm_box_pack_end($bx, $rd);
+    evas_object_show($rd);
+    evas_object_show($ic);
 
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "How");
-   evas_object_smart_callback_add($bt, "clicked", \&my_show_it, $it2);
-   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($bt, 0.9, 0.5);
-   elm_table_pack($tb2, $bt, 0, 1, 1, 1);
-   evas_object_show($bt);   
-   
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "doing");
-   evas_object_smart_callback_add($bt, "clicked", \&my_show_it, $it3);
-   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($bt, 0.9, 0.5);
-   elm_table_pack($tb2, $bt, 0, 2, 1, 1);
-   evas_object_show($bt);
-   
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Here");
-   evas_object_smart_callback_add($bt, "clicked", \&my_show_it, $it4);
-   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($bt, 0.9, 0.5);
-   elm_table_pack($tb2, $bt, 0, 3, 1, 1);
-   evas_object_show($bt);
+    elm_radio_value_set($rdg, 2);
 
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Maybe this...");
-   evas_object_smart_callback_add($bt, "clicked", \&my_show_it, $it5);
-   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($bt, 0.9, 0.5);
-   elm_table_pack($tb2, $bt, 0, 4, 1, 1);
-   evas_object_show($bt);
-
-   evas_object_show($tb2);
-   
-   evas_object_resize($win, 320, 300);
-   evas_object_show($win);
+    evas_object_show($win);
 }
 
-sub my_li2_clear
-{
-   #elm_list_clear(data);
+sub my_pager_1 {
+
+    #Pginfo *info = data;
+    #elm_pager_content_promote(info->pager, info->pg2);
 }
 
-sub my_li2_sel
-{
-   #Elm_List_Item *it = elm_list_selected_item_get(obj);
-   #elm_list_item_selected_set(it, 0);
-#   elm_list_item_selected_set(event_info, 0);
+sub my_pager_2 {
+
+    #Pginfo *info = data;
+    #elm_pager_content_promote(info->pager, info->pg3);
 }
 
-sub test_list2
-{
-   my ($win, $bg, $li, $ic, $ic2, $bx, $bx2, $bt);
-   my $it;
+sub my_pager_3 {
 
-   $win = elm_win_add(undef, "list-2", ELM_WIN_BASIC);
-   elm_win_title_set($win, "List 2");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_bg_file_set($bg, $images{'plant'}, undef);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $bx);
-   evas_object_show($bx);
-
-   $li = elm_list_add($win);
-   evas_object_size_hint_align_set($li, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set($li, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_list_horizontal_mode_set($li, ELM_LIST_LIMIT);
-#   elm_list_multi_select_set(li, 1);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   $it = elm_list_item_append($li, "Hello", $ic, undef,  \&my_li2_sel, undef);
-   elm_list_item_selected_set($it, 1);
-   $ic = elm_icon_add($win);
-   elm_icon_scale_set($ic, 0, 0);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_list_item_append($li, "world", $ic, undef,  undef, undef);
-   $ic = elm_icon_add($win);
-   elm_icon_standard_set($ic, "edit");
-   elm_icon_scale_set($ic, 0, 0);
-   elm_list_item_append($li, ".", $ic, undef,  undef, undef);
-
-   $ic = elm_icon_add($win);
-   elm_icon_standard_set($ic, "delete");
-   elm_icon_scale_set($ic, 0, 0);
-   $ic2 = elm_icon_add($win);
-   elm_icon_standard_set($ic2, "clock");
-   elm_icon_scale_set($ic2, 0, 0);
-   elm_list_item_append($li, "How", $ic, $ic2,  undef, undef);
-
-   $bx2 = elm_box_add($win);
-   elm_box_horizontal_set($bx2, 1);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.5, 0.5);
-   elm_box_pack_end($bx2, $ic);
-   evas_object_show($ic);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $img_logo_small, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.5, 0.0);
-   elm_box_pack_end($bx2, $ic);
-   evas_object_show($ic);
-   elm_list_item_append($li, "are", $bx2, undef, undef, undef);
-
-   elm_list_item_append($li, "you", undef, undef,  undef, undef);
-   elm_list_item_append($li, "doing", undef, undef,  undef, undef);
-   elm_list_item_append($li, "out", undef, undef,  undef, undef);
-   elm_list_item_append($li, "there", undef, undef,  undef, undef);
-   elm_list_item_append($li, "today", undef, undef,  undef, undef);
-   elm_list_item_append($li, "?", undef, undef,  undef, undef);
-   elm_list_item_append($li, "Here", undef, undef,  undef, undef);
-   elm_list_item_append($li, "are", undef, undef,  undef, undef);
-   elm_list_item_append($li, "some", undef, undef,  undef, undef);
-   elm_list_item_append($li, "more", undef, undef,  undef, undef);
-   elm_list_item_append($li, "items", undef, undef,  undef, undef);
-   elm_list_item_append($li, "Longer label.", undef, undef,  undef, undef);
-
-   elm_list_go($li);
-
-   elm_box_pack_end($bx, $li);
-   evas_object_show($li);
-
-   $bx2 = elm_box_add($win);
-   elm_box_horizontal_set($bx2, 1);
-   elm_box_homogenous_set($bx2, 1);
-   evas_object_size_hint_weight_set($bx2, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_align_set($bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Clear");
-   evas_object_smart_callback_add($bt, "clicked", \&my_li2_clear, $li);
-   evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end($bx2, $bt);
-   evas_object_show($bt);
-
-   elm_box_pack_end($bx, $bx2);
-   evas_object_show($bx2);
-
-   evas_object_resize($win, 320, 300);
-   evas_object_show($win);
+    #Pginfo *info = data;
+    #elm_pager_content_promote(info->pager, info->pg1);
 }
 
-sub test_list3
-{
-   my ($win, $bg, $li, $ic, $ic2, $bx);
+sub my_pager_pop {
 
-   $win = elm_win_add(undef, "list-3", ELM_WIN_BASIC);
-   elm_win_title_set($win, "List 3");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $li = elm_list_add($win);
-   elm_win_resize_object_add($win, $li);
-   evas_object_size_hint_weight_set($li, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_list_horizontal_mode_set($li, ELM_LIST_COMPRESS);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_list_item_append($li, "Hello", $ic, undef,  undef, undef);
-   $ic = elm_icon_add($win);
-   elm_icon_scale_set($ic, 0, 0);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_list_item_append($li, "world", $ic, undef,  undef, undef);
-   $ic = elm_icon_add($win);
-   elm_icon_standard_set($ic, "edit");
-   elm_icon_scale_set($ic, 0, 0);
-   elm_list_item_append($li, ".", $ic, undef,  undef, undef);
-
-   $ic = elm_icon_add($win);
-   elm_icon_standard_set($ic, "delete");
-   elm_icon_scale_set($ic, 0, 0);
-   $ic2 = elm_icon_add($win);
-   elm_icon_standard_set($ic2, "clock");
-   elm_icon_scale_set($ic2, 0, 0);
-   elm_list_item_append($li, "How", $ic, $ic2,  undef, undef);
-
-   $bx = elm_box_add($win);
-   elm_box_horizontal_set($bx, 1);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.5, 0.5);
-   elm_box_pack_end($bx, $ic);
-   evas_object_show($ic);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.5, 0.0);
-   elm_box_pack_end($bx, $ic);
-   evas_object_show($ic);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   evas_object_size_hint_align_set($ic, 0.0, EVAS_HINT_EXPAND);
-   elm_box_pack_end($bx, $ic);
-   evas_object_show($ic);
-
-   elm_list_item_append($li, "are", $bx, undef,  undef, undef);
-   elm_list_item_append($li, "you", undef, undef,  undef, undef);
-   elm_list_item_append($li, "doing", undef, undef,  undef, undef);
-   elm_list_item_append($li, "out", undef, undef,  undef, undef);
-   elm_list_item_append($li, "there", undef, undef,  undef, undef);
-   elm_list_item_append($li, "today", undef, undef,  undef, undef);
-   elm_list_item_append($li, "?", undef, undef,  undef, undef);
-   elm_list_item_append($li, "Here", undef, undef,  undef, undef);
-   elm_list_item_append($li, "are", undef, undef,  undef, undef);
-   elm_list_item_append($li, "some", undef, undef,  undef, undef);
-   elm_list_item_append($li, "more", undef, undef,  undef, undef);
-   elm_list_item_append($li, "items", undef, undef,  undef, undef);
-   elm_list_item_append($li, "Is this label long enough?", undef, undef,  undef, undef);
-   elm_list_item_append($li, "Maybe this one is even longer so we can test long long items.", undef, undef,  undef, undef);
-
-   elm_list_go($li);
-
-   evas_object_show($li);
-
-   evas_object_resize($win, 320, 300);
-   evas_object_show($win);
+    #Pginfo *info = data;
+    #elm_pager_content_pop(info->pager);
 }
 
+sub test_pager {
+    my ($win, $bg, $pg, $bx, $lb, $bt);
 
-sub test_carousel
-{
-   my ($win, $bg);
+    my %info;
 
-   $win = elm_win_add(undef, "carousel", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Carousel");
-   elm_win_autodel_set($win, 1);
+    $win = elm_win_add(undef, "pager", ELM_WIN_BASIC);
+    elm_win_title_set($win, "Pager");
+    elm_win_autodel_set($win, 1);
 
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
+    $bg = elm_bg_add($win);
+    elm_win_resize_object_add($win, $bg);
+    evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bg);
 
-   evas_object_resize($win, 320, 240);
-   evas_object_show($win);
+    $pg = elm_pager_add($win);
+    elm_win_resize_object_add($win, $pg);
+    evas_object_show($pg);
+
+    $info{'pager'} = $pg;
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bx);
+
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb,
+            "This is page 1 in a pager stack.<br>" . "<br>"
+          . "So what is a pager stack? It is a stack<br>"
+          . "of pages that hold widgets in it. The<br>"
+          . "pages can be pushed and popped on and<br>"
+          . "off the stack, activated and otherwise<br>"
+          . "activated if already in the stack<br>"
+          . "(activated means promoted to the top of<br>"
+          . "the stack).<br>" . "<br>"
+          . "The theme may define the animation how<br>"
+          . "show and hide of pages.");
+    elm_box_pack_end($bx, $lb);
+    evas_object_show($lb);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Flip to 2");
+    evas_object_smart_callback_add($bt, "clicked", \&my_pager_1, \%info);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Popme");
+    evas_object_smart_callback_add($bt, "clicked", \&my_pager_pop, \%info);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+    elm_pager_content_push($pg, $bx);
+    $info{'pg1'} = $bx;
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bx);
+
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb, "This is page 2 in a pager stack.<br>" . "<br>" . "This is just like the previous page in<br>" . "the pager stack.");
+    elm_box_pack_end($bx, $lb);
+    evas_object_show($lb);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Flip to 3");
+    evas_object_smart_callback_add($bt, "clicked", \&my_pager_2, \%info);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Popme");
+    evas_object_smart_callback_add($bt, "clicked", \&my_pager_pop, \%info);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+    elm_pager_content_push($pg, $bx);
+    $info{'pg2'} = $bx;
+
+    $bx = elm_box_add($win);
+    evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_show($bx);
+
+    $lb = elm_label_add($win);
+    elm_label_label_set($lb, "This is page 3 in a pager stack.<br>" . "<br>" . "This is just like the previous page in<br>" . "the pager stack.");
+    elm_box_pack_end($bx, $lb);
+    evas_object_show($lb);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Flip to 1");
+    evas_object_smart_callback_add($bt, "clicked", \&my_pager_3, \%info);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+
+    $bt = elm_button_add($win);
+    elm_button_label_set($bt, "Popme");
+    evas_object_smart_callback_add($bt, "clicked", \&my_pager_pop, \%info);
+    elm_box_pack_end($bx, $bt);
+    evas_object_show($bt);
+    elm_pager_content_push($pg, $bx);
+    $info{'pg3'} = $bx;
+
+    evas_object_show($win);
 }
 
-sub test_inwin
-{
-   my ($win, $bg, $inwin, $lb);
-
-   $win = elm_win_add(undef, "inwin", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Inwin");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $inwin = elm_win_inwin_add($win);
-   evas_object_show($inwin);
-
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "This is an \"inwin\" - a window in a<br>" .
-		       "window. This is handy for quick popups<br>".
-		       "you want centered, taking over the window<br>".
-		       "until dismissed somehow. Unlike hovers they<br>".
-		       "don't hover over their target.");
-   elm_win_inwin_content_set($inwin, $lb);
-   evas_object_show($lb);
-
-   evas_object_resize($win, 320, 240);
-   evas_object_show($win);
-}
-
-sub test_inwin2
-{
-   my  ($win, $bg, $inwin, $lb);
-
-   $win = elm_win_add(undef, "inwin", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Inwin");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $inwin = elm_win_inwin_add($win);
-   elm_object_style_set($inwin, "minimal_vertical");
-   evas_object_show($inwin);
-
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "This is an \"inwin\" - a window in a<br>".
-		       "window. This is handy for quick popups<br>".
-		       "you want centered, taking over the window<br>".
-		       "until dismissed somehow. Unlike hovers they<br>".
-		       "don't hover over their target.<br>".
-		       "<br>".
-		       "This inwin style compacts itself vertically<br>".
-		       "to the size of its contents minimum size.");
-   elm_win_inwin_content_set($inwin, $lb);
-   evas_object_show($lb);
-
-   evas_object_resize($win, 320, 240);
-   evas_object_show($win);
-}
-
-sub test_scaling
-{
-   my ($win, $bg, $bx, $bt);
-
-   $win = elm_win_add(undef, "scaling", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Scaling");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $bx);
-   evas_object_show($bx);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Scale: 0.5");
-   elm_object_scale_set($bt, 0.5);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Scale: 0.75");
-   elm_object_scale_set($bt, 0.75);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Scale: 1.0");
-   elm_object_scale_set($bt, 1.0);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Scale: 1.5");
-   elm_object_scale_set($bt, 1.5);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Scale: 2.0");
-   elm_object_scale_set($bt, 2.0);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Scale: 3.0");
-   elm_object_scale_set($bt, 3.0);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   evas_object_resize($win, 320, 320);
-   evas_object_show($win);
-}
-
-sub test_scaling2
-{
-   my ($win, $bg, $bx, $fr, $lb);
-
-   $win = elm_win_add(undef, "scaling-2", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Scaling 2");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $bx);
-   evas_object_show($bx);
-
-   $fr = elm_frame_add($win);
-   elm_object_scale_set($fr, 0.5);
-   elm_frame_label_set($fr, "Scale: 0.5");
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "Parent frame scale<br>" .
-		       "is 0.5. Child should<br>".
-		       "inherit it.");
-   elm_frame_content_set($fr, $lb);
-   evas_object_show($lb);
-   elm_box_pack_end($bx, $fr);
-   evas_object_show($fr);
-
-   $fr = elm_frame_add($win);
-   elm_frame_label_set($fr, "Scale: 1.0");
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "Parent frame scale<br>".
-		       "is 1.0. Child should<br>".
-		       "inherit it.");
-   elm_frame_content_set($fr, $lb);
-   evas_object_show($lb);
-   elm_object_scale_set($fr, 1.0);
-   elm_box_pack_end($bx, $fr);
-   evas_object_show($fr);
-
-   $fr = elm_frame_add($win);
-   elm_frame_label_set($fr, "Scale: 2.0");
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "Parent frame scale<br>".
-		       "is 2.0. Child should<br>".
-		       "inherit it.");
-   elm_frame_content_set($fr, $lb);
-   evas_object_show($lb);
-   elm_object_scale_set($fr, 2.0);
-   elm_box_pack_end($bx, $fr);
-   evas_object_show($fr);
-
-   evas_object_resize($win, 320, 320);
-   evas_object_show($win);
-}
-
-sub test_slider
-{
-   my ($win, $bg, $bx, $sl, $ic);
-
-   $win = elm_win_add(undef, "slider", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Slider");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $bx);
-   evas_object_show($bx);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
-
-   $sl = elm_slider_add($win);
-   elm_slider_label_set($sl, "Label");
-   elm_slider_icon_set($sl, $ic);
-   elm_slider_unit_format_set($sl, "%1.1f units");
-   elm_slider_span_size_set($sl, 120);
-   evas_object_size_hint_align_set($sl, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end($bx, $sl);
-   evas_object_show($ic);
-   evas_object_show($sl);
-
-   $sl = elm_slider_add($win);
-   elm_slider_label_set($sl, "Label 2");
-   elm_slider_span_size_set($sl, 80);
-   evas_object_size_hint_align_set($sl, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_slider_indicator_format_set($sl, "%3.0f");
-   elm_slider_min_max_set($sl, 50, 150);
-   elm_slider_value_set($sl, 80);
-   elm_slider_inverted_set($sl, 1);
-   evas_object_size_hint_align_set($sl, 0.5, 0.5);
-   evas_object_size_hint_weight_set($sl, 0.0, 0.0);
-   elm_box_pack_end($bx, $sl);
-   evas_object_show($ic);
-   evas_object_show($sl);
-
-   $sl = elm_slider_add($win);
-   elm_slider_label_set($sl, "Label 3");
-   elm_slider_unit_format_set($sl, "units");
-   elm_slider_span_size_set($sl, 40);
-   evas_object_size_hint_align_set($sl, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_slider_indicator_format_set($sl, "%3.0f");
-   elm_slider_min_max_set($sl, 50, 150);
-   elm_slider_value_set($sl, 80);
-   elm_slider_inverted_set($sl, 1);
-   elm_object_scale_set($sl, 2.0);
-   elm_box_pack_end($bx, $sl);
-   evas_object_show($ic);
-   evas_object_show($sl);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'small_logo'}, undef);
-   evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_HORIZONTAL, 1, 1);
-
-   $sl = elm_slider_add($win);
-   elm_slider_icon_set($sl, $ic);
-   elm_slider_label_set($sl, "Label 4");
-   elm_slider_unit_format_set($sl, "units");
-   elm_slider_span_size_set($sl, 60);
-   evas_object_size_hint_align_set($sl, 0.5, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set($sl, 0.0, EVAS_HINT_EXPAND);
-   elm_slider_indicator_format_set($sl, "%1.1f");
-   elm_slider_value_set($sl, 0.2);
-   elm_object_scale_set($sl, 1.0);
-   elm_slider_horizontal_set($sl, 0);
-   elm_box_pack_end($bx, $sl);
-   evas_object_show($ic);
-   evas_object_show($sl);
-
-   evas_object_show($win);
-}
-
-sub test_check
-{
-   my ($win, $bg, $bx, $ic, $ck);
-
-   $win = elm_win_add(undef, "check", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Checks");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $bx);
-   evas_object_show($bx);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
-   $ck = elm_check_add($win);
-   evas_object_size_hint_weight_set($ck, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($ck, EVAS_HINT_FILL, 0.5);
-   elm_check_label_set($ck, "Icon sized to check");
-   elm_check_icon_set($ck, $ic);
-   elm_check_state_set($ck, 1);
-   elm_box_pack_end($bx, $ck);
-   evas_object_show($ck);
-   evas_object_show($ic);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   $ck = elm_check_add($win);
-   elm_check_label_set($ck, "Icon no scale");
-   elm_check_icon_set($ck, $ic);
-   elm_box_pack_end($bx, $ck);
-   evas_object_show($ck);
-   evas_object_show($ic);
-
-   $ck = elm_check_add($win);
-   elm_check_label_set($ck, "Label Only");
-   elm_box_pack_end($bx, $ck);
-   evas_object_show($ck);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
-   $ck = elm_check_add($win);
-   evas_object_size_hint_weight_set($ck, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($ck, EVAS_HINT_FILL, 0.5);
-   elm_check_label_set($ck, "Disabled check");
-   elm_check_icon_set($ck, $ic);
-   elm_check_state_set($ck, 1);
-   elm_box_pack_end($bx, $ck);
-   elm_object_disabled_set($ck, 1);
-   evas_object_show($ck);
-   evas_object_show($ic);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-   $ck = elm_check_add($win);
-   elm_check_icon_set($ck, $ic);
-   elm_box_pack_end($bx, $ck);
-   evas_object_show($ck);
-   evas_object_show($ic);
-
-   evas_object_show($win);
-}
-
-sub test_radio
-{
-   my ($win, $bg, $bx, $ic, $rd, $rdg);
-
-   $win = elm_win_add(undef, "radio", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Radios");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add($win, $bx);
-   evas_object_show($bx);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   evas_object_size_hint_aspect_set($ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
-
-   $rd = elm_radio_add($win);
-   elm_radio_state_value_set($rd, 0);
-   evas_object_size_hint_weight_set($rd, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set($rd, EVAS_HINT_FILL, 0.5);
-   elm_radio_label_set($rd, "Icon sized to radio");
-   elm_radio_icon_set($rd, $ic);
-   elm_box_pack_end($bx, $rd);
-   evas_object_show($rd);
-   evas_object_show($ic);
-   $rdg = $rd;
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-
-   $rd = elm_radio_add($win);
-   elm_radio_state_value_set($rd, 1);
-   elm_radio_group_add($rd, $rdg);
-   elm_radio_label_set($rd, "Icon no scale");
-   elm_radio_icon_set($rd, $ic);
-   elm_box_pack_end($bx, $rd);
-   evas_object_show($rd);
-   evas_object_show($ic);
-
-   $rd = elm_radio_add($win);
-   elm_radio_state_value_set($rd, 2);
-   elm_radio_group_add($rd, $rdg);
-   elm_radio_label_set($rd, "Label Only");
-   elm_box_pack_end($bx, $rd);
-   evas_object_show($rd);
-
-   $rd = elm_radio_add($win);
-   elm_radio_state_value_set($rd, 3);
-   elm_radio_group_add($rd, $rdg);
-   elm_radio_label_set($rd, "Disabled");
-   elm_object_disabled_set($rd, 1);
-   elm_box_pack_end($bx, $rd);
-   evas_object_show($rd);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-
-   $rd = elm_radio_add($win);
-   elm_radio_state_value_set($rd, 4);
-   elm_radio_group_add($rd, $rdg);
-   elm_radio_icon_set($rd, $ic);
-   elm_box_pack_end($bx, $rd);
-   evas_object_show($rd);
-   evas_object_show($ic);
-
-   $ic = elm_icon_add($win);
-   elm_icon_file_set($ic, $images{'logo_small'}, undef);
-   elm_icon_scale_set($ic, 0, 0);
-
-   $rd = elm_radio_add($win);
-   elm_radio_state_value_set($rd, 5);
-   elm_radio_group_add($rd, $rdg);
-   elm_radio_icon_set($rd, $ic);
-   elm_object_disabled_set($rd, 1);
-   elm_box_pack_end($bx, $rd);
-   evas_object_show($rd);
-   evas_object_show($ic);
-
-   elm_radio_value_set($rdg, 2);
-
-   evas_object_show($win);
-}
-
-sub my_pager_1
-{
-   #Pginfo *info = data;
-   #elm_pager_content_promote(info->pager, info->pg2);
-}
-
-sub my_pager_2
-{
-   #Pginfo *info = data;
-   #elm_pager_content_promote(info->pager, info->pg3);
-}
-
-sub my_pager_3
-{
-   #Pginfo *info = data;
-   #elm_pager_content_promote(info->pager, info->pg1);
-}
-
-sub my_pager_pop
-{
-   #Pginfo *info = data;
-   #elm_pager_content_pop(info->pager);
-}
-
-sub test_pager
-{
-   my ($win, $bg, $pg, $bx, $lb, $bt);
-
-   my %info;
-
-   $win = elm_win_add(undef, "pager", ELM_WIN_BASIC);
-   elm_win_title_set($win, "Pager");
-   elm_win_autodel_set($win, 1);
-
-   $bg = elm_bg_add($win);
-   elm_win_resize_object_add($win, $bg);
-   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bg);
-
-   $pg = elm_pager_add($win);
-   elm_win_resize_object_add($win, $pg);
-   evas_object_show($pg);
-
-   $info{'pager'} = $pg;
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bx);
-
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "This is page 1 in a pager stack.<br>" .
-		       "<br>".
-		       "So what is a pager stack? It is a stack<br>".
-		       "of pages that hold widgets in it. The<br>".
-		       "pages can be pushed and popped on and<br>".
-		       "off the stack, activated and otherwise<br>".
-		       "activated if already in the stack<br>".
-		       "(activated means promoted to the top of<br>".
-		       "the stack).<br>".
-		       "<br>".
-		       "The theme may define the animation how<br>".
-		       "show and hide of pages.");
-   elm_box_pack_end($bx, $lb);
-   evas_object_show($lb);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Flip to 2");
-   evas_object_smart_callback_add($bt, "clicked", \&my_pager_1, \%info);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Popme");
-   evas_object_smart_callback_add($bt, "clicked", \&my_pager_pop, \%info);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-   elm_pager_content_push($pg, $bx);
-   $info{'pg1'} = $bx;
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bx);
-
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "This is page 2 in a pager stack.<br>".
-		       "<br>".
-		       "This is just like the previous page in<br>".
-		       "the pager stack."
-		       );
-   elm_box_pack_end($bx, $lb);
-   evas_object_show($lb);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Flip to 3");
-   evas_object_smart_callback_add($bt, "clicked", \&my_pager_2, \%info);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Popme");
-   evas_object_smart_callback_add($bt, "clicked", \&my_pager_pop, \%info);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-   elm_pager_content_push($pg, $bx);
-   $info{'pg2'} = $bx;
-
-   $bx = elm_box_add($win);
-   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show($bx);
-
-   $lb = elm_label_add($win);
-   elm_label_label_set($lb,
-		       "This is page 3 in a pager stack.<br>".
-		       "<br>".
-		       "This is just like the previous page in<br>".
-		       "the pager stack.");
-   elm_box_pack_end($bx, $lb);
-   evas_object_show($lb);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Flip to 1");
-   evas_object_smart_callback_add($bt, "clicked", \&my_pager_3, \%info);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-
-   $bt = elm_button_add($win);
-   elm_button_label_set($bt, "Popme");
-   evas_object_smart_callback_add($bt, "clicked", \&my_pager_pop, \%info);
-   elm_box_pack_end($bx, $bt);
-   evas_object_show($bt);
-   elm_pager_content_push($pg, $bx);
-   $info{'pg3'} = $bx;
-
-   evas_object_show($win);
-}
-
-__END__
+=pod
 
 typedef struct _Testitem
 {
@@ -2695,390 +3841,385 @@ typedef struct _Testitem
    int mode, onoff;
 } Testitem;
 
-static void
-my_bt_38_alpha_on(void *data, Evas_Object *obj, void *event_info)
+=cut
+
+sub my_bt_38_alpha_on
 {
-   Evas_Object *win = data;
-   Evas_Object *bg = evas_object_data_get(win, "bg");
-   evas_object_hide(bg);
-   elm_win_alpha_set(win, 1);
+    my ($win) = @_;
+    my $bg = evas_object_data_get($$win, "bg");
+    evas_object_hide($bg);
+    elm_win_alpha_set($$win, 1);
 }
 
-static void
-my_bt_38_alpha_off(void *data, Evas_Object *obj, void *event_info)
+sub my_bt_38_alpha_off
 {
-   Evas_Object *win = data;
-   Evas_Object *bg = evas_object_data_get(win, "bg");
-   evas_object_show(bg);
-   elm_win_alpha_set(win, 0);
+   my ($win) = @_;
+   my $bg = evas_object_data_get($$win, "bg");
+   evas_object_show($bg);
+   elm_win_alpha_set($$win, 0);
 }
 
-static void
-my_bt_38_rot_0(void *data, Evas_Object *obj, void *event_info)
+sub my_bt_38_rot_0
 {
-   Evas_Object *win = data;
-   Evas_Object *bg = evas_object_data_get(win, "bg");
-   elm_win_rotation_set(win, 0);
+my ($win) = @_;
+   my $bg = evas_object_data_get($$win, "bg");
+   elm_win_rotation_set($$win, 0);
 }
 
-static void
-my_bt_38_rot_90(void *data, Evas_Object *obj, void *event_info)
+sub my_bt_38_rot_90
 {
-   Evas_Object *win = data;
-   Evas_Object *bg = evas_object_data_get(win, "bg");
-   elm_win_rotation_set(win, 90);
+    my ($win) = @_;
+    my $bg = evas_object_data_get($$win, "bg");
+   elm_win_rotation_set($$win, 90);
 }
 
-static void
-my_bt_38_rot_180(void *data, Evas_Object *obj, void *event_info)
+sub my_bt_38_rot_180
 {
-   Evas_Object *win = data;
-   Evas_Object *bg = evas_object_data_get(win, "bg");
-   elm_win_rotation_set(win, 180);
+    my ($win) = @_;
+    my $bg = evas_object_data_get($$win, "bg");
+   elm_win_rotation_set($$win, 180);
 }
 
-static void
-my_bt_38_rot_270(void *data, Evas_Object *obj, void *event_info)
+sub my_bt_38_rot_270
 {
-   Evas_Object *win = data;
-   Evas_Object *bg = evas_object_data_get(win, "bg");
-   elm_win_rotation_set(win, 270);
+    my  ($win) = @_;
+    my $bg = evas_object_data_get($$win, "bg");
+   elm_win_rotation_set($$win, 270);
 }
 
-static void
-my_win_move(void *data, Evas_Object *obj, void *event_info)
+sub my_win_move
 {
-   Evas_Coord x, y;
-   elm_win_screen_position_get(obj, &x, &y);
-   printf("MOVE - win geom: %4i %4i\n", x, y);
+    my (undef, $obj) = @_;
+    my ($x, $y);
+    
+# TODO
+  # elm_win_screen_position_get(obj, &x, &y);
+   #printf("MOVE - win geom: %4i %4i\n", x, y);
 }
 
-static void
-_win_resize(void *data, Evas *e, Evas_Object *obj, void *event_info)
+sub
+_win_resize
 {
-   Evas_Coord w, h;
-   evas_object_geometry_get(obj, undef, undef, &w, &h);
-   printf("RESIZE - win geom: %4ix%4i\n", w, h);
+    my (undef, $obj) = @_;
+   my ($w, $h);
+# TODO
+#   evas_object_geometry_get(obj, undef, undef, &w, &h);
+#   printf("RESIZE - win geom: %4ix%4i\n", w, h);
 }
 
-void
-test_win_state(void *data, Evas_Object *obj, void *event_info)
+sub test_win_state
 {
-   Evas_Object *win, *bg, *sl, *bx, *bx2, *bt;
-   static Testitem tit[3];
-   int i;
+   my ($win, $bg, $sl, $bx, $bx2, $bt);
+   my $i;
 
-   win = elm_win_add(undef, "window-state", ELM_WIN_BASIC);
-   elm_win_title_set(win, "Window States");
-   evas_object_smart_callback_add(win, "moved", my_win_move, undef);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize, undef);
-   elm_win_autodel_set(win, 1);
+   $win = elm_win_add(undef, "window-state", ELM_WIN_BASIC);
+   elm_win_title_set($win, "Window States");
+   evas_object_smart_callback_add($win, "moved", \&my_win_move, undef);
+   evas_object_event_callback_add($win, EVAS_CALLBACK_RESIZE, \&_win_resize, undef);
+   elm_win_autodel_set($win, 1);
 
-   bg = elm_bg_add(win);
-   elm_win_resize_object_add(win, bg);
-   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(bg);
-   evas_object_data_set(win, "bg", bg);
+   $bg = elm_bg_add($win);
+   elm_win_resize_object_add($win, $bg);
+   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($bg);
+   evas_object_data_set($win, "bg", $bg);
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add(win, bx);
-   evas_object_show(bx);
+   $bx = elm_box_add($win);
+   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add($win, $bx);
+   evas_object_show($bx);
 
-   bx2 = elm_box_add(win);
-   elm_box_horizontal_set(bx2, 1);
-   elm_box_homogenous_set(bx2, 1);
-   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_fill_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   $bx2 = elm_box_add($win);
+   elm_box_horizontal_set($bx2, 1);
+   elm_box_homogenous_set($bx2, 1);
+   evas_object_size_hint_weight_set($bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_fill_set($bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Alpha On");
-   evas_object_smart_callback_add(bt, "clicked", my_bt_38_alpha_on, win);
-   evas_object_size_hint_fill_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Alpha On");
+   evas_object_smart_callback_add($bt, "clicked", \&my_bt_38_alpha_on, \$win);
+   evas_object_size_hint_fill_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Alpha Off");
-   evas_object_smart_callback_add(bt, "clicked", my_bt_38_alpha_off, win);
-   evas_object_size_hint_fill_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Alpha Off");
+   evas_object_smart_callback_add($bt, "clicked",\&my_bt_38_alpha_off, \$win);
+   evas_object_size_hint_fill_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   elm_box_pack_end(bx, bx2);
-   evas_object_show(bx2);
+   elm_box_pack_end($bx, $bx2);
+   evas_object_show($bx2);
 
-   bx2 = elm_box_add(win);
-   elm_box_horizontal_set(bx2, 1);
-   elm_box_homogenous_set(bx2, 1);
-   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_fill_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   $bx2 = elm_box_add($win);
+   elm_box_horizontal_set($bx2, 1);
+   elm_box_homogenous_set($bx2, 1);
+   evas_object_size_hint_weight_set($bx2, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_fill_set($bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
-   sl = elm_slider_add(win);
-   elm_slider_label_set(sl, "Test");
-   elm_slider_span_size_set(sl, 100);
-   evas_object_size_hint_align_set(sl, 0.5, 0.5);
-   evas_object_size_hint_weight_set(sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_slider_indicator_format_set(sl, "%3.0f");
-   elm_slider_min_max_set(sl, 50, 150);
-   elm_slider_value_set(sl, 50);
-   elm_slider_inverted_set(sl, 1);
-   elm_box_pack_end(bx2, sl);
-   evas_object_show(sl);
+   $sl = elm_slider_add($win);
+   elm_slider_label_set($sl, "Test");
+   elm_slider_span_size_set($sl, 100);
+   evas_object_size_hint_align_set($sl, 0.5, 0.5);
+   evas_object_size_hint_weight_set($sl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_slider_indicator_format_set($sl, "%3.0f");
+   elm_slider_min_max_set($sl, 50, 150);
+   elm_slider_value_set($sl, 50);
+   elm_slider_inverted_set($sl, 1);
+   elm_box_pack_end($bx2, $sl);
+   evas_object_show($sl);
 
-   elm_box_pack_end(bx, bx2);
-   evas_object_show(bx2);
+   elm_box_pack_end($bx, $bx2);
+   evas_object_show($bx2);
 
-   bx2 = elm_box_add(win);
-   elm_box_horizontal_set(bx2, 1);
-   elm_box_homogenous_set(bx2, 1);
-   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_fill_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   $bx2 = elm_box_add($win);
+   elm_box_horizontal_set($bx2, 1);
+   elm_box_homogenous_set($bx2, 1);
+   evas_object_size_hint_weight_set($bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_fill_set($bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Rot 0");
-   evas_object_smart_callback_add(bt, "clicked", my_bt_38_rot_0, win);
-   evas_object_size_hint_fill_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Rot 0");
+   evas_object_smart_callback_add($bt, "clicked", \&my_bt_38_rot_0, \$win);
+   evas_object_size_hint_fill_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Rot 90");
-   evas_object_smart_callback_add(bt, "clicked", my_bt_38_rot_90, win);
-   evas_object_size_hint_fill_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Rot 90");
+   evas_object_smart_callback_add($bt, "clicked", \&my_bt_38_rot_90, \$win);
+   evas_object_size_hint_fill_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Rot 180");
-   evas_object_smart_callback_add(bt, "clicked", my_bt_38_rot_180, win);
-   evas_object_size_hint_fill_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Rot 180");
+   evas_object_smart_callback_add($bt, "clicked", \&my_bt_38_rot_180, \$win);
+   evas_object_size_hint_fill_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Rot 270");
-   evas_object_smart_callback_add(bt, "clicked", my_bt_38_rot_270, win);
-   evas_object_size_hint_fill_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Rot 270");
+   evas_object_smart_callback_add($bt, "clicked", \&my_bt_38_rot_270, \$win);
+   evas_object_size_hint_fill_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   elm_box_pack_end(bx, bx2);
-   evas_object_show(bx2);
+   elm_box_pack_end($bx, $bx2);
+   evas_object_show($bx2);
 
-   evas_object_resize(win, 280, 400);
-   evas_object_show(win);
+   evas_object_resize($win, 280, 400);
+   evas_object_show($win);
 }
-#endif
 
-#include <Elementary.h>
-#ifndef ELM_LIB_QUICKLAUNCH
-typedef struct Progressbar
+my %_test_progressbar = (
+    pb1 => undef,
+    pb2 => undef,
+    pb3 => undef,
+    pb4 => undef,
+    pb5 => undef,
+    pb6 => undef,
+    pb7 => undef,
+    rub => 0,
+    timer => undef
+);
+
+sub _my_progressbar_value_set
 {
-   Evas_Object *pb1;
-   Evas_Object *pb2;
-   Evas_Object *pb3;
-   Evas_Object *pb4;
-   Evas_Object *pb5;
-   Evas_Object *pb6;
-   Evas_Object *pb7;
-   Eina_Bool run;
-   Ecore_Timer *timer;
-} Progressbar;
+   my $progress = elm_progressbar_value_get ($_test_progressbar{'pb1'});
+   if ($progress < 1.0) {
+       $progress += 0.0123;
+   }
+   else {
+       $progress = 0.0;
+   }
+   elm_progressbar_value_set($_test_progressbar{pb1}, $progress);
+   elm_progressbar_value_set($_test_progressbar{pb4}, $progress);
+   elm_progressbar_value_set($_test_progressbar{pb3}, $progress);
+   elm_progressbar_value_set($_test_progressbar{pb6}, $progress);
+   if ($progress < 1.0) { 
+       return ECORE_CALLBACK_RENEW;
+   }
+   $_test_progressbar{run} = 0;
 
-static Progressbar _test_progressbar;
-
-static int
-_my_progressbar_value_set (void *data)
-{
-   double progress;
-
-   progress = elm_progressbar_value_get (_test_progressbar.pb1);
-   if (progress < 1.0) progress += 0.0123;
-   else progress = 0.0;
-   elm_progressbar_value_set(_test_progressbar.pb1, progress);
-   elm_progressbar_value_set(_test_progressbar.pb4, progress);
-   elm_progressbar_value_set(_test_progressbar.pb3, progress);
-   elm_progressbar_value_set(_test_progressbar.pb6, progress);
-   if (progress < 1.0) return ECORE_CALLBACK_RENEW;
-   _test_progressbar.run = 0;
    return ECORE_CALLBACK_CANCEL;
 }
 
-static void
-my_progressbar_test_start(void *data, Evas_Object *obj, void *event_info)
+sub my_progressbar_test_start
 {
-   elm_progressbar_pulse(_test_progressbar.pb2, EINA_TRUE);
-   elm_progressbar_pulse(_test_progressbar.pb5, EINA_TRUE);
-   elm_progressbar_pulse(_test_progressbar.pb7, EINA_TRUE);
-   if (!_test_progressbar.run)
+   elm_progressbar_pulse($_test_progressbar{pb2}, EINA_TRUE);
+   elm_progressbar_pulse($_test_progressbar{pb5}, EINA_TRUE);
+   elm_progressbar_pulse($_test_progressbar{pb7}, EINA_TRUE);
+   if (!$_test_progressbar{run})
      {
-        _test_progressbar.timer = ecore_timer_add(0.1, _my_progressbar_value_set, undef);
-        _test_progressbar.run = EINA_TRUE;
+#        $_test_progressbar{timer} =
+            ecore_timer_add(0.1, \&_my_progressbar_value_set, undef);
+        $_test_progressbar{run} = EINA_TRUE;
      }
 }
 
-static void
-my_progressbar_test_stop(void *data, Evas_Object *obj, void *event_info)
+sub my_progressbar_test_stop
 {
-   elm_progressbar_pulse(_test_progressbar.pb2, EINA_FALSE);
-   elm_progressbar_pulse(_test_progressbar.pb5, EINA_FALSE);
-   elm_progressbar_pulse(_test_progressbar.pb7, EINA_FALSE);
-   if (_test_progressbar.run)
+   elm_progressbar_pulse($_test_progressbar{pb2}, EINA_FALSE);
+   elm_progressbar_pulse($_test_progressbar{pb5}, EINA_FALSE);
+   elm_progressbar_pulse($_test_progressbar{pb7}, EINA_FALSE);
+   if ($_test_progressbar{run})
      {
-        ecore_timer_del(_test_progressbar.timer);
-        _test_progressbar.run = EINA_FALSE;
+        #ecore_timer_del($_test_progressbar{timer});
+        $_test_progressbar{run} = EINA_FALSE;
      }
 }
 
-static void
-my_progressbar_destroy(void *data, Evas_Object *obj, void *event_info)
+sub my_progressbar_destroy
 {
+    my (undef, $obj) = @_;
    my_progressbar_test_stop(undef, undef, undef);
-   evas_object_del(obj);
+#   evas_object_del($$obj);
 }
 
-void
-test_progressbar(void *data, Evas_Object *obj, void *event_info)
+sub test_progressbar
 {
-   Evas_Object *win, *bg, *pb, *bx, *pbx, *hbx, *bt, *bt_bx, *ic1, *ic2;
-   Progressbar *test;
-   char buf[PATH_MAX];
+   my ($win, $bg, $pb, $bx, $pbx, $hbx, $bt, $bt_bx, $ic1, $ic2);
+   my $test;
 
-   win = elm_win_add(undef, "progressbar", ELM_WIN_BASIC);
-   elm_win_title_set(win, "Progressbar");
-   evas_object_smart_callback_add(win, "delete,request", 
-                                  my_progressbar_destroy, test);
+   $win = elm_win_add(undef, "progressbar", ELM_WIN_BASIC);
+   elm_win_title_set($win, "Progressbar");
+   evas_object_smart_callback_add($win, "delete,request", 
+                                  \&my_progressbar_destroy, \$test);
 
-   bg = elm_bg_add(win);
-   elm_win_resize_object_add(win, bg);
-   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(bg);
+   $bg = elm_bg_add($win);
+   elm_win_resize_object_add($win, $bg);
+   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($bg);
 
-   bx = elm_box_add(win);
-   elm_win_resize_object_add(win, bx);
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(bx);
+   $bx = elm_box_add($win);
+   elm_win_resize_object_add($win, $bx);
+   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($bx);
 
-   pb = elm_progressbar_add(win);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
-   elm_box_pack_end(bx, pb);
-//   elm_progressbar_horizontal_set(pb, EINA_TRUE);
-//   elm_progressbar_label_set(pb, "Progression %");
-//   elm_progressbar_unit_format_set(pb, undef);
-   evas_object_show(pb);
-   _test_progressbar.pb1 = pb;
+   $pb = elm_progressbar_add($win);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, 0.5);
+   elm_box_pack_end($bx, $pb);
+#   elm_progressbar_horizontal_set(pb, EINA_TRUE);
+#   elm_progressbar_label_set(pb, "Progression %");
+#   elm_progressbar_unit_format_set(pb, undef);
+   evas_object_show($pb);
+   $_test_progressbar{pb1} = $pb;
 
-   pb = elm_progressbar_add(win);
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_progressbar_label_set(pb, "Infinite bounce");
-   elm_progressbar_pulse_set(pb, EINA_TRUE);
-   elm_box_pack_end(bx, pb);
-   evas_object_show(pb);
-   _test_progressbar.pb2 = pb;
+   $pb = elm_progressbar_add($win);
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_progressbar_label_set($pb, "Infinite bounce");
+   elm_progressbar_pulse_set($pb, EINA_TRUE);
+   elm_box_pack_end($bx, $pb);
+   evas_object_show($pb);
+   $_test_progressbar{pb2} = $pb;
 
-   ic1 = elm_icon_add(win);
-   snprintf(buf, sizeof(buf), "%s/images/logo_small.png", PACKAGE_DATA_DIR);
-   elm_icon_file_set(ic1, buf, undef);
-   evas_object_size_hint_aspect_set(ic1, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+   $ic1 = elm_icon_add($win);
+   elm_icon_file_set($ic1, $images{'logo_small'}, undef);
+   evas_object_size_hint_aspect_set($ic1, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
 
-   pb = elm_progressbar_add(win);
-   elm_progressbar_label_set(pb, "Label");
-   elm_progressbar_icon_set(pb, ic1);
-   elm_progressbar_inverted_set(pb, 1);
-   elm_progressbar_unit_format_set(pb, "%1.1f units");
-   elm_progressbar_span_size_set(pb, 200);
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx, pb);
-   evas_object_show(ic1);
-   evas_object_show(pb);
-   _test_progressbar.pb3 = pb;
+   $pb = elm_progressbar_add($win);
+   elm_progressbar_label_set($pb, "Label");
+   elm_progressbar_icon_set($pb, $ic1);
+   elm_progressbar_inverted_set($pb, 1);
+   elm_progressbar_unit_format_set($pb, "%1.1f units");
+   elm_progressbar_span_size_set($pb, 200);
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx, $pb);
+   evas_object_show($ic1);
+   evas_object_show($pb);
+   $_test_progressbar{pb3} = $pb;
 
-   hbx = elm_box_add(win);
-   elm_box_horizontal_set(hbx, EINA_TRUE);
-   evas_object_size_hint_weight_set(hbx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(hbx, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_box_pack_end(bx, hbx);
-   evas_object_show(hbx);
+   $hbx = elm_box_add($win);
+   elm_box_horizontal_set($hbx, EINA_TRUE);
+   evas_object_size_hint_weight_set($hbx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set($hbx, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_pack_end($bx, $hbx);
+   evas_object_show($hbx);
 
-   pb = elm_progressbar_add(win);
-   elm_progressbar_horizontal_set(pb, EINA_FALSE);
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(hbx, pb);
-   elm_progressbar_span_size_set(pb, 60);
-   elm_progressbar_label_set(pb, "percent");
-   evas_object_show(pb);
-   _test_progressbar.pb4 = pb;
+   $pb = elm_progressbar_add($win);
+   elm_progressbar_horizontal_set($pb, EINA_FALSE);
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($hbx, $pb);
+   elm_progressbar_span_size_set($pb, 60);
+   elm_progressbar_label_set($pb, "percent");
+   evas_object_show($pb);
+   $_test_progressbar{pb4} = $pb;
 
-   pb = elm_progressbar_add(win);
-   elm_progressbar_horizontal_set(pb, EINA_FALSE);
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_progressbar_span_size_set(pb, 80);
-   elm_progressbar_pulse_set(pb, EINA_TRUE);
-   elm_progressbar_unit_format_set(pb, undef);
-   elm_progressbar_label_set(pb, "Infinite bounce");
-   elm_box_pack_end(hbx, pb);
-   evas_object_show(pb);
-   _test_progressbar.pb5 = pb;
+   $pb = elm_progressbar_add($win);
+   elm_progressbar_horizontal_set($pb, EINA_FALSE);
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_progressbar_span_size_set($pb, 80);
+   elm_progressbar_pulse_set($pb, EINA_TRUE);
+   elm_progressbar_unit_format_set($pb, undef);
+   elm_progressbar_label_set($pb, "Infinite bounce");
+   elm_box_pack_end($hbx, $pb);
+   evas_object_show($pb);
+   $_test_progressbar{pb5} = $pb;
 
-   ic2 = elm_icon_add(win);
-   elm_icon_file_set(ic2, buf, undef);
-   evas_object_size_hint_aspect_set(ic2, EVAS_ASPECT_CONTROL_HORIZONTAL, 1, 1);
+   $ic2 = elm_icon_add($win);
+   elm_icon_file_set($ic2, $images{'logo_small'}, undef);
+   evas_object_size_hint_aspect_set($ic2, EVAS_ASPECT_CONTROL_HORIZONTAL, 1, 1);
 
-   pb = elm_progressbar_add(win);
-   elm_progressbar_horizontal_set(pb, EINA_FALSE);
-   elm_progressbar_label_set(pb, "Label");
-   elm_progressbar_icon_set(pb, ic2);
-   elm_progressbar_inverted_set(pb, 1);
-   elm_progressbar_unit_format_set(pb, "%1.2f%%");
-   elm_progressbar_span_size_set(pb, 200);
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(hbx, pb);
-   evas_object_show(ic2);
-   evas_object_show(pb);
-   _test_progressbar.pb6 = pb;
+   $pb = elm_progressbar_add($win);
+   elm_progressbar_horizontal_set($pb, EINA_FALSE);
+   elm_progressbar_label_set($pb, "Label");
+   elm_progressbar_icon_set($pb, $ic2);
+   elm_progressbar_inverted_set($pb, 1);
+   elm_progressbar_unit_format_set($pb, "%1.2f%%");
+   elm_progressbar_span_size_set($pb, 200);
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($hbx, $pb);
+   evas_object_show($ic2);
+   evas_object_show($pb);
+   $_test_progressbar{pb6} = $pb;
 
-   pb = elm_progressbar_add(win);
-   elm_object_style_set(pb, "wheel");
-   elm_progressbar_label_set(pb, "Style: wheel");
-   evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx, pb);
-   evas_object_show(pb);
-   _test_progressbar.pb7 = pb;
+   $pb = elm_progressbar_add($win);
+   elm_object_style_set($pb, "wheel");
+   elm_progressbar_label_set($pb, "Style: wheel");
+   evas_object_size_hint_align_set($pb, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($pb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx, $pb);
+   evas_object_show($pb);
+   $_test_progressbar{pb7} = $pb;
 
-   bt_bx = elm_box_add(win);
-   elm_box_horizontal_set(bt_bx, 1);
-   evas_object_size_hint_weight_set(bt_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx, bt_bx);
-   evas_object_show(bt_bx);
+   $bt_bx = elm_box_add($win);
+   elm_box_horizontal_set($bt_bx, 1);
+   evas_object_size_hint_weight_set($bt_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx, $bt_bx);
+   evas_object_show($bt_bx);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Start");
-   evas_object_smart_callback_add(bt, "clicked", my_progressbar_test_start, undef);
-   elm_box_pack_end(bt_bx, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Start");
+   evas_object_smart_callback_add($bt, "clicked", \&my_progressbar_test_start, undef);
+   elm_box_pack_end($bt_bx, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Stop");
-   evas_object_smart_callback_add(bt, "clicked", my_progressbar_test_stop, undef);
-   elm_box_pack_end(bt_bx, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Stop");
+   evas_object_smart_callback_add($bt, "clicked", \&my_progressbar_test_stop, undef);
+   elm_box_pack_end($bt_bx, $bt);
+   evas_object_show($bt);
 
-   evas_object_show(win);
+   evas_object_show($win);
 }
+
+__END__
+
 #endif
 #include <Elementary.h>
 #ifndef ELM_LIB_QUICKLAUNCH
