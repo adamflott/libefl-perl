@@ -68,8 +68,7 @@ sub basic {
     my $lb = elm_label_add($win);
     elm_label_label_set($lb, "If you can see this window, then most likely everything compiled correctly.<br>"
                            . "If you'd like test out the Elementary test suite (a port of elementary_test to Perl)<br>"
-                           . "click the 'OK' button. Otherwise click 'Cancel' found to Click on the 'OK' button to<br>"
-                           . "exit and pass the test.");
+                           . "click the 'Continue' button. Otherwise click the 'Done' button to exit and pass the test.");
     elm_frame_content_set($fr, $lb);
 #    elm_object_scale_set($lb, 1.0);
     evas_object_show($lb);
@@ -82,12 +81,12 @@ sub basic {
     evas_object_show($bx3);
 
     my $ok = elm_button_add($win);
-    elm_button_label_set($ok, "OK");
+    elm_button_label_set($ok, "Continue");
     elm_box_pack_end($bx3, $ok);
     evas_object_show($ok);
 
     my $cancel = elm_button_add($win);
-    elm_button_label_set($cancel, "Cancel");
+    elm_button_label_set($cancel, "Done");
     elm_box_pack_end($bx3, $cancel);
     evas_object_show($cancel);
 
