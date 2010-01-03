@@ -1200,10 +1200,24 @@ evas_object_precise_is_inside_set(Evas_Object *obj, Eina_Bool precise)
 Eina_Bool
 evas_object_precise_is_inside_get(Evas_Object *obj)
 
-=pod
-
 void
-evas_object_event_callback_add(Evas_Object *obj, Evas_Callback_Type type, void (*func) (void *data, Evas *e, Evas_Object *obj, void *event_info), void *data)
+evas_object_event_callback_add(obj, type, func, data)
+    Evas_Object *obj
+    Evas_Callback_Type type
+    SV *func
+    SV *data
+    PREINIT:
+        _saved_callback *sc = NULL;
+    CODE:
+        sc = perl_save_callback_new(func, data);
+
+        if (DEBUG) {
+            fprintf(stderr, "evas_object_event_callback_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+        }
+
+        evas_object_event_callback_add(obj, type, call_perl_sub, sc);
+
+=pod
 
 void *
 evas_object_event_callback_del(Evas_Object *obj, Evas_Callback_Type type, void (*func) (void *data, Evas *e, Evas_Object *obj, void *event_info))
