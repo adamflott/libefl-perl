@@ -28,7 +28,6 @@ WriteMakefile(
     'PREREQ_PM'     => {
         'Sub::Exporter' => 0
     },
-    'ABSTRACT_FROM' => 'lib/EFL.pm',
     'DEFINE'        => ($ENV{'TEST_MAINTAINER'}) ? '-DDEBUG=1' : '',
 
     # These 3 lines prevent ExtUtils::MakeMaker from building EFL.so

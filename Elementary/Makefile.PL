@@ -16,7 +16,6 @@ WriteMakefile(
         'XSLoader'      => 0,
         'Sub::Exporter' => 0,
     },
-    'ABSTRACT_FROM' => '../lib/EFL/Elementary.pm',
     'AUTHOR'        => 'Adam Flott <adam@npjh.com>',
     'LIBS'          => $elm_pkg_info{'libs'},
     'INC'           => '-Wall -I. ' . $elm_pkg_info{'cflags'},

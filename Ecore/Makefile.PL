@@ -12,7 +12,6 @@ WriteMakefile(
     NAME          => 'EFL::Ecore',
     VERSION_FROM  => '../lib/EFL/Ecore.pm',
     PREREQ_PM     => {},
-    ABSTRACT_FROM => '../lib/EFL/Ecore.pm',
     AUTHOR        => 'Adam Flott <adam@npjh.com>',
     LIBS          => $ecore_pkg_info{'libs'},
     INC           => '-I. ' . $ecore_pkg_info{'cflags'},
