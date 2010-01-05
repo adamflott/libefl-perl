@@ -1,0 +1,9 @@
+=over
+
+=item * Main Enlightenment page: L<http://www.enlightenment.org>
+
+=item * EFL API: L<http://docs.enlightenment.org>
+
+=item * EFL Git Web Repository: L<http://git.npjh.com/?p=libefl-perl.git;a=summary>
+
+=back

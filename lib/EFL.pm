@@ -67,8 +67,19 @@ prototyping.
 
 =head1 WARNING
 
-With regards to passing data between Perl and C, the API is not set in stone and
-may change in future releases.
+include_file:docs/warning.txt
+
+=head1 EVEN MORE WARNINGS
+
+Due to the complexity of EFL and XS, it is very easy to segfault. For instance,
+
+    elm_win_add(undef, "main", ELM_WIN_BASIC);
+
+    ...
+
+Without a leading C<elm_init();> causes a segfault. You've been warned. Although
+if you compiled Elementary, Evas, etc with symbols (C<-g> in gcc), you can
+easily see where the segfault occured with C<gdb -c core `which perl`>.
 
 =head1 REQUIRES
 
@@ -152,8 +163,4 @@ Some thanks for helping me out.
 
 =head1 SEE ALSO
 
-Main Enlightenment page: L<http://www.enlightenment.org>
-
-Elementary API: L<http://docs.enlightenment.org/auto/elementary/>
-
-Git Web Repository: L<http://git.npjh.com/?p=libefl-perl.git;a=summary>
+include_file:docs/see_also.pod

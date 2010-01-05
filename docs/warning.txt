@@ -1,0 +1,2 @@
+With regards to passing data between Perl and C, the API is not set in stone and
+may change in future releases.
