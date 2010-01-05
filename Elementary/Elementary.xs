@@ -1257,7 +1257,7 @@ elm_genlist_item_append(obj, itc, data, parent, flags, func, func_data)
     PREINIT:
         _saved_callback *sc = NULL;
     CODE:
-        sc = perl_save_callback_new(func, data);
+        sc = perl_save_callback_new(func, func_data);
 
         if (DEBUG) {
             fprintf(stderr, "elm_genlist_item_append() func:%x, data:%x, sc:%x\n", func, data, sc);
