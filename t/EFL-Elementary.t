@@ -7,6 +7,8 @@ BEGIN {
     die("\$DISPLAY not set! This test needs X Windows to work!\n") unless ($ENV{'DISPLAY'});
 }
 
+use blib;
+
 use Test::More;
 my $tn = 0;
 
