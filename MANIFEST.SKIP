@@ -1,5 +1,11 @@
 tmp/
 
+docs/warning.txt
+docs/see_also.pod
+
+.perlcriticrc
+core
+
 Elementary/common.c
 Elementary/common.h
 Elementary/elementary-const-c.inc
