@@ -1254,17 +1254,14 @@ elm_genlist_item_append(obj, itc, data, parent, flags, func, func_data)
     Elm_Genlist_Item_Flags flags
     SV *func
     SV *func_data
-    CODE:
+    PREINIT:
         _saved_callback *sc = NULL;
-
-        Newx(sc, 1, _saved_callback);
+    CODE:
+        sc = perl_save_callback_new(func, data);
 
         if (DEBUG) {
             fprintf(stderr, "elm_genlist_item_append() func:%x, data:%x, sc:%x\n", func, data, sc);
         }
-
-        sc->func = SvRV((SV *)func);
-        sc->data = func_data;
 
         RETVAL = elm_genlist_item_append(obj, itc, data, parent, flags, call_perl_sub, sc);
     OUTPUT:
