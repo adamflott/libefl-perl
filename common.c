@@ -8,7 +8,12 @@ _saved_callback *perl_save_callback_new(SV *func, SV *data) {
     cb = (_saved_callback *)malloc(sizeof(_saved_callback));
     memset(cb, '\0', sizeof(_saved_callback));
 
-    cb->func = newSVsv(func);
+    if (func && SvOK(func)) {
+        cb->func = newSVsv(func);
+    }
+    else {
+        cb->func = NULL;
+    }
 
     if (data && SvOK(data)) {
         if (SvROK(data)) {
@@ -17,6 +22,9 @@ _saved_callback *perl_save_callback_new(SV *func, SV *data) {
         else {
             croak("Call back data is not a reference at %x\n", data);
         }
+    }
+    else {
+        cb->data = NULL;
     }
 
     return cb;
@@ -30,7 +38,11 @@ void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
     }
 
     int count;
+
     _saved_callback *perl_saved_cb = data;
+
+    SV *s_obj = newSV(0);
+    SV *s_ei  = newSV(0);
 
     if (!perl_saved_cb->func) {
         return;
@@ -46,8 +58,17 @@ void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
             fprintf(stderr, "pushing data at %x\n", perl_saved_cb->data);
         }
 
-       /* TODO rest of params */
-       XPUSHs(perl_saved_cb->data);
+        if (obj) {
+            sv_setref_pv(s_obj, "Evas_ObjectPtr", obj);
+        }
+
+        if (event_info) {
+            sv_setref_pv(s_ei, NULL, event_info);
+        }
+
+        XPUSHs(perl_saved_cb->data);
+        XPUSHs(s_obj);
+        XPUSHs(s_ei);
     }
 
     PUTBACK;
