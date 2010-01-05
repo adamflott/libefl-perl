@@ -26,7 +26,8 @@ WriteMakefile(
     'AUTHOR'        => 'Adam Flott <adam@npjh.com>',
     'VERSION_FROM'  => 'lib/EFL.pm',
     'PREREQ_PM'     => {
-        'Sub::Exporter' => 0
+        'Sub::Exporter' => 0,
+        'Test::More'    => '0.83'
     },
     'DEFINE'        => ($ENV{'TEST_MAINTAINER'}) ? '-DDEBUG=1' : '',
 
