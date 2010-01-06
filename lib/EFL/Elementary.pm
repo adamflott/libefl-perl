@@ -864,27 +864,15 @@ XSLoader::load('EFL::Elementary', $XS_VERSION);
 Perl bindings for the Enlightenment Foundation Libraries (EFL) Elementary
 library.
 
+Visual examples at L<http://trac.enlightenment.org/e/wiki/Elementary>.
+
 =head1 WARNING
 
 include_file:docs/warning.txt
 
 =head1 SYNOPSIS
 
-    use EFL::Elementary qw(:all);
-    use EFL::Evas qw(:all);
-
-    elm_init();
-    my $win = elm_win_add(undef, "main", ELM_WIN_BASIC);
-
-    elm_win_title_set($win, "my first window");
-
-    evas_object_smart_callback_add($win, "delete,request", sub { elm_exit() }, 1);
-
-    evas_object_show($win);
-
-    elm_run();
-
-    elm_exit();
+include_file:docs/elm_synopsis.t
 
 =head1 EXPORTED API/CONSTANTS
 
