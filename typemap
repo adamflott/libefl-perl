@@ -2,7 +2,7 @@ Eina_Accessor *             T_PTR
 Eina_Bool                   T_IV
 Eina_Bool *                 T_PTR
 Eina_Iterator *             T_PTR
-Eina_List *                 T_PTROBJ
+Eina_List *                 T_PTR
 Elm_Flip_Mode               T_IV
 Elm_Genlist_Item *          T_PTR
 Elm_Genlist_Item_Class *    T_PTR
@@ -73,7 +73,7 @@ Evas_Textblock_Cursor *     T_PTR
 Evas_Textblock_Style *      T_PTR
 Evas_Textblock_Text_Type    T_IV
 Evas_Transform *            T_PTR
-const Eina_List *           T_PTROBJ
+const Eina_List *           T_PTR
 const Elm_List_Item *       T_PTR
 const Elm_Menu_Item *       T_PTROBJ
 const Elm_Slideshow_Item_Class *    T_PTROBJ
