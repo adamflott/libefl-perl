@@ -122,7 +122,7 @@ basic();
 
 my $win = elm_win_add(undef, "main", ELM_WIN_BASIC);
 
-elm_win_title_set($win, "EFL::Elementary simple window creation");
+elm_win_title_set($win, "EFL::Elementary Tests");
 
 evas_object_smart_callback_add($win, "delete,request",
                                sub {
