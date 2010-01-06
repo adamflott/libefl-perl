@@ -670,7 +670,7 @@ const char *
 elm_entry_entry_get(Evas_Object *obj)
 
 const char *
-elm_entry_selection_get(const Evas_Object *obj)
+elm_entry_selection_get(Evas_Object *obj)
 
 void
 elm_entry_entry_insert(Evas_Object *obj, const char *entry)

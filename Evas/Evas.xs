@@ -51,7 +51,7 @@ void
 evas_free(Evas *e)
 
 int
-evas_render_method_lookup(char *name)
+evas_render_method_lookup(const char *name)
 
 Eina_List *
 evas_render_method_list()
@@ -553,7 +553,7 @@ int
 evas_font_cache_get(Evas *e)
 
 Eina_List *
-evas_font_available_list(Evas *e)
+evas_font_available_list(const Evas *e)
 
 void
 evas_font_available_list_free(Evas *e, Eina_List *available)
