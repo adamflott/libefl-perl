@@ -35,10 +35,6 @@ _saved_callback *perl_save_callback_new(SV *func, SV *data) {
 void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
     dSP;
 
-    if (data == NULL) {
-        fprintf(stderr, "cb == NULL in perl_xmmsclient_callback_invoke\n");
-    }
-
     int count;
 
     _saved_callback *perl_saved_cb = data;
