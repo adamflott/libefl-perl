@@ -1051,7 +1051,7 @@ evas_object_smart_callback_add(obj, event, func, data)
         sc = perl_save_callback_new(func, data);
 
         if (DEBUG) {
-            fprintf(stderr, "evas_object_smart_callback_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+            fprintf(stderr, "evas_object_smart_callback_add() func:%p, data:%p, sc:%p\n", func, data, sc);
         }
 
         evas_object_smart_callback_add(obj, event, call_perl_sub, sc);
@@ -1212,7 +1212,7 @@ evas_object_event_callback_add(obj, type, func, data)
         sc = perl_save_callback_new(func, data);
 
         if (DEBUG) {
-            fprintf(stderr, "evas_object_event_callback_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+            fprintf(stderr, "evas_object_event_callback_add() func:%p, data:%p, sc:%p\n", func, data, sc);
         }
 
         evas_object_event_callback_add(obj, type, call_perl_sub, sc);

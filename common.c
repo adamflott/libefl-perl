@@ -20,7 +20,7 @@ _saved_callback *perl_save_callback_new(SV *func, SV *data) {
             cb->data = newSVsv(data);
         }
         else {
-            croak("Call back data is not a reference at %x\n", data);
+            croak("Call back data is not a reference at %p\n", data);
         }
     }
     else {
@@ -55,7 +55,7 @@ void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
 
     if (perl_saved_cb->data && SvOK(perl_saved_cb->data)) {
         if (DEBUG) {
-            fprintf(stderr, "pushing data at %x\n", perl_saved_cb->data);
+            fprintf(stderr, "pushing data at %p\n", perl_saved_cb->data);
         }
 
         if (obj) {
@@ -74,7 +74,7 @@ void call_perl_sub(void *data, Evas_Object *obj, void *event_info) {
     PUTBACK;
 
     if (DEBUG) {
-        fprintf(stderr, "call_perl_sub func: %x, SV *: %x, data: %x\n",
+        fprintf(stderr, "call_perl_sub func: %p, SV *: %p, data: %p\n",
                 perl_saved_cb->func,
                 perl_saved_cb,
                 perl_saved_cb->data);

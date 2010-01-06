@@ -27,7 +27,7 @@ ecore_timer_add(in, func, data)
         sc = perl_save_callback_new(func, data);
 
         if (DEBUG) {
-            fprintf(stderr, "ecore_timer_add() func:%x, data:%x, sc:%x\n", func, data, sc);
+            fprintf(stderr, "ecore_timer_add() func:%p, data:%p, sc:%p\n", func, data, sc);
         }
 
         RETVAL = ecore_timer_add(in, call_perl_sub, sc);
