@@ -12,8 +12,8 @@ our $XS_VERSION = $VERSION;
 
 use Sub::Exporter;
 
-use constant EINA_TRUE  => 1;
-use constant EINA_FALSE => 0;
+use constant 'EINA_TRUE'  => 1;    ## no critic
+use constant 'EINA_FALSE' => 0;    ## no critic
 
 our @__constants = qw(
   EINA_TRUE

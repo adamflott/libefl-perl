@@ -819,8 +819,7 @@ sub elm_init {
 
     my $ptrs = pack('P' x @args, @args);
 
-    #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
-    _elm_init(scalar(@args), $ptrs);
+    return _elm_init(scalar(@args), $ptrs);
 }
 
 sub elm_quicklaunch_init {
@@ -828,8 +827,7 @@ sub elm_quicklaunch_init {
 
     my $ptrs = pack('P' x @args, @args);
 
-    #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
-    _elm_quicklaunch_init(scalar(@args), $ptrs);
+    return _elm_quicklaunch_init(scalar(@args), $ptrs);
 }
 
 sub elm_quicklaunch_sub_init {
@@ -837,8 +835,7 @@ sub elm_quicklaunch_sub_init {
 
     my $ptrs = pack('P' x @args, @args);
 
-    #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
-    _elm_quicklaunch_sub_init(scalar(@args), $ptrs);
+    return _elm_quicklaunch_sub_init(scalar(@args), $ptrs);
 }
 
 sub elm_quicklaunch_prepare {
@@ -846,18 +843,14 @@ sub elm_quicklaunch_prepare {
 
     my $ptrs = pack('P' x @args, @args);
 
-    #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     return _elm_quicklaunch_prepare(scalar(@args), $ptrs);
 }
-
-# TODO sub elm_quicklaunch_fork {}
 
 sub elm_quicklaunch_fallback {
     my (@args) = @_;
 
     my $ptrs = pack('P' x @args, @args);
 
-    #$ptrs .= pack "LL", 0, 0; # For odd systems with sizeof(IV) < sizeof(void *)
     return _elm_quicklaunch_fallback(scalar(@args), $ptrs);
 }
 

@@ -659,8 +659,6 @@ XSLoader::load('EFL::Evas', $VERSION);
 
 1;
 
-__END__
-
 =head1 DESCRIPTION
 
 Perl bindings for the Enlightenment Foundation Libraries (EFL) Evas library.
