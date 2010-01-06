@@ -2951,31 +2951,34 @@ my_gl_update(void *data, Evas_Object *obj, void *event_info)
    elm_genlist_item_update(tit->item);
 }
 
-void
-test_genlist3(void *data, Evas_Object *obj, void *event_info)
+=cut
+
+=pod
+
+sub test_genlist3
 {
-   Evas_Object *win, *bg, *gl, *bx, *bx2, *bt;
-   static Testitem tit[3];
-   int i;
+   my ($win, $bg, $gl, $bx, $bx2, $bt);
+   my @tit;
+   my $i;
 
-   win = elm_win_add(undef, "genlist-3", ELM_WIN_BASIC);
-   elm_win_title_set(win, "Genlist 3");
-   elm_win_autodel_set(win, 1);
+   $win = elm_win_add(undef, "genlist-3", ELM_WIN_BASIC);
+   elm_win_title_set($win, "Genlist 3");
+   elm_win_autodel_set($win, 1);
 
-   bg = elm_bg_add(win);
-   elm_win_resize_object_add(win, bg);
-   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(bg);
+   $bg = elm_bg_add($win);
+   elm_win_resize_object_add($win, $bg);
+   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($bg);
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add(win, bx);
-   evas_object_show(bx);
+   $bx = elm_box_add($win);
+   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add($win, $bx);
+   evas_object_show($bx);
 
-   gl = elm_genlist_add(win);
-   evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(gl);
+   $gl = elm_genlist_add($win);
+   evas_object_size_hint_align_set($gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($gl);
 
    itc2.item_style     = "default";
    itc2.func.label_get = gl2_label_get;
@@ -2984,57 +2987,61 @@ test_genlist3(void *data, Evas_Object *obj, void *event_info)
    itc2.func.del       = gl2_del;
 
    tit[0].mode = 0;
-   tit[0].item = elm_genlist_item_append(gl, &itc2,
-					 &(tit[0])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
-					 undef/* func data */);
+   tit[0].item = elm_genlist_item_append($gl, \$itc2,
+					 &(tit[0]), undef, ELM_GENLIST_ITEM_NONE, \&gl_sel,
+					 undef);
    tit[1].mode = 1;
-   tit[1].item = elm_genlist_item_append(gl, &itc2,
-					 &(tit[1])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
-					 undef/* func data */);
+   tit[1].item = elm_genlist_item_append($gl, \$itc2,
+					 &(tit[1]), undef, ELM_GENLIST_ITEM_NONE, \&gl_sel,
+					 undef);
    tit[2].mode = 2;
-   tit[2].item = elm_genlist_item_append(gl, &itc2,
-					 &(tit[2])/* item data */, undef/* parent */, ELM_GENLIST_ITEM_NONE, gl_sel/* func */,
-					 undef/* func data */);
+   tit[2].item = elm_genlist_item_append($gl, \$itc2,
+					 &(tit[2]), undef, ELM_GENLIST_ITEM_NONE, \&gl_sel,
+					 undef);
 
-   elm_box_pack_end(bx, gl);
-   evas_object_show(bx2);
+   elm_box_pack_end($bx, $gl);
+   evas_object_show($bx2);
 
-   bx2 = elm_box_add(win);
-   elm_box_horizontal_set(bx2, 1);
-   elm_box_homogenous_set(bx2, 1);
-   evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, 0.0);
-   evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   $bx2 = elm_box_add($win);
+   elm_box_horizontal_set($bx2, 1);
+   elm_box_homogenous_set($bx2, 1);
+   evas_object_size_hint_weight_set($bx2, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set($bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "[1]");
-   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[0]));
-   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "[1]");
+   evas_object_smart_callback_add($bt, "clicked", \&my_gl_update, \$tit[0]);
+   evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "[2]");
-   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[1]));
-   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "[2]");
+   evas_object_smart_callback_add($bt, "clicked", \&my_gl_update, \$tit[1]);
+   evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "[3]");
-   evas_object_smart_callback_add(bt, "clicked", my_gl_update, &(tit[2]));
-   evas_object_size_hint_align_set(bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(bt, EVAS_HINT_EXPAND, 0.0);
-   elm_box_pack_end(bx2, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "[3]");
+   evas_object_smart_callback_add($bt, "clicked", \&my_gl_update, \$tit[2]);
+   evas_object_size_hint_align_set($bt, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set($bt, EVAS_HINT_EXPAND, 0.0);
+   elm_box_pack_end($bx2, $bt);
+   evas_object_show($bt);
 
-   elm_box_pack_end(bx, bx2);
-   evas_object_show(bx2);
+   elm_box_pack_end($bx, $bx2);
+   evas_object_show($bx2);
 
-   evas_object_resize(win, 320, 320);
-   evas_object_show(win);
+   evas_object_resize($win, 320, 320);
+   evas_object_show($win);
 }
+
+=cut
+
+=pod
 
 /*************/
 
