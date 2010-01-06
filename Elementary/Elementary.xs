@@ -788,7 +788,7 @@ elm_notepad_file_set(Evas_Object *obj, char *file, Elm_Text_Format format)
 # anchorview
 # ------------------------------------------------------------------------------
 
-void
+Evas_Object *
 elm_anchorview_add(Evas_Object *parent);
 
 void
