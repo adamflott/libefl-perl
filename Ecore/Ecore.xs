@@ -4,8 +4,9 @@
 
 #include "ecore-const-c.inc"
 
+#ifndef DEBUG
 #define DEBUG 0
-
+#endif
 
 MODULE = EFL::Ecore		PACKAGE = EFL::Ecore
 

@@ -4,8 +4,9 @@
 
 #include "evas-const-c.inc"
 
+#ifndef DEBUG
 #define DEBUG 0
-
+#endif
 
 MODULE = EFL::Evas		PACKAGE = EFL::Evas
 

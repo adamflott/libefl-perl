@@ -4,8 +4,9 @@
 
 #include "elementary-const-c.inc"
 
+#ifndef DEBUG
 #define DEBUG 0
-
+#endif
 
 MODULE = EFL::Elementary		PACKAGE = EFL::Elementary		
 
