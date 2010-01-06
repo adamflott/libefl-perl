@@ -14,7 +14,7 @@ WriteMakefile(
     PREREQ_PM     => {},
     AUTHOR        => 'Adam Flott <adam@npjh.com>',
     LIBS          => $ecore_pkg_info{'libs'},
-    INC           => '-I. ' . $ecore_pkg_info{'cflags'},
+    INC           => '-Wall -I. ' . $ecore_pkg_info{'cflags'},
     OBJECT        => 'Ecore.o common.o',
     XS            => {'Ecore.xs' => 'Ecore.c'},
     'DEFINE'      => ($ENV{'TEST_MAINTAINER'}) ? '-DDEBUG=1' : '',

@@ -31,7 +31,7 @@ ecore_timer_add(in, func, data)
             fprintf(stderr, "ecore_timer_add() func:%p, data:%p, sc:%p\n", func, data, sc);
         }
 
-        RETVAL = ecore_timer_add(in, call_perl_sub, sc);
+        RETVAL = ecore_timer_add(in, (void *)call_perl_sub, sc);
     OUTPUT:
         RETVAL
 

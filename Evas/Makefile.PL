@@ -18,7 +18,7 @@ WriteMakefile(
     },
     'AUTHOR'        => 'Adam Flott <adam@npjh.com>',
     'LIBS'          => $evas_pkg_info{'libs'},
-    'INC'           => '-I. ' . $evas_pkg_info{'cflags'},
+    'INC'           => '-Wall -I. ' . $evas_pkg_info{'cflags'},
     'OBJECT'        => 'Evas.o common.o',
     'XS'            => {'Evas.xs' => 'Evas.c'},
     'DEFINE'        => ($ENV{'TEST_MAINTAINER'}) ? '-DDEBUG=1' : '',

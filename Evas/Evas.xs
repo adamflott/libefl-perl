@@ -1216,7 +1216,7 @@ evas_object_event_callback_add(obj, type, func, data)
             fprintf(stderr, "evas_object_event_callback_add() func:%p, data:%p, sc:%p\n", func, data, sc);
         }
 
-        evas_object_event_callback_add(obj, type, call_perl_sub, sc);
+        evas_object_event_callback_add(obj, type, (void *)call_perl_sub, sc);
 
 =pod
 
