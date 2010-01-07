@@ -455,6 +455,7 @@ my @elm_menu = qw(
 my @elm_list = qw(
   elm_list_add
   elm_list_item_append
+  elm_list_selected_item_get
   elm_list_clear
   elm_list_go
   elm_list_multi_select_set
@@ -464,7 +465,6 @@ my @elm_list = qw(
   elm_list_item_selected_set
   elm_list_item_show
   elm_list_item_del
-
   elm_list_item_data_get
   elm_list_item_icon_get
   elm_list_item_icon_set

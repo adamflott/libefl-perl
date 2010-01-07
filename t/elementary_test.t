@@ -173,12 +173,12 @@ elm_list_item_append($li, "Hover 2",        undef, undef, \&test_hover2,        
 elm_list_item_append($li, "Entry",          undef, undef, \&test_entry,          undef);
 elm_list_item_append($li, "Entry Scrolled", undef, undef, \&test_entry_scrolled, undef);
 elm_list_item_append($li, "Notepad",          undef, undef, \&test_notepad,        undef);
-# TODO push args on stack elm_list_item_append($li, "Anchorview",       undef, undef, \&test_anchorview,     undef);
-# TODO push args on stack elm_list_item_append($li, "Anchorblock",      undef, undef, \&test_anchorblock,    undef);
+elm_list_item_append($li, "Anchorview",       undef, undef, \&test_anchorview,     undef);
+elm_list_item_append($li, "Anchorblock",      undef, undef, \&test_anchorblock,    undef);
 elm_list_item_append($li, "Toolbar",  undef, undef, \&test_toolbar,  undef);
 elm_list_item_append($li, "Hoversel", undef, undef, \&test_hoversel, undef);
 elm_list_item_append($li, "List",     undef, undef, \&test_list,     undef);
-# TODO push args on stack elm_list_item_append($li, "List 2",           undef, undef, \&test_list2,          undef);
+# elm_list_item_append($li, "List 2",           undef, undef, \&test_list2,          undef);
 elm_list_item_append($li, "List 3",   undef, undef, \&test_list3,    undef);
 elm_list_item_append($li, "Carousel", undef, undef, \&test_carousel, undef);
 elm_list_item_append($li, "Inwin",    undef, undef, \&test_inwin,    undef);
@@ -193,16 +193,16 @@ elm_list_item_append($li, "Genlist",          undef, undef, \&test_genlist,     
 # elm_list_item_append($li, "Genlist 4",        undef, undef, \&test_genlist4,       undef);
 # elm_list_item_append($li, "Genlist 5",        undef, undef, \&test_genlist5,       undef);
 # elm_list_item_append($li, "Genlist Tree",     undef, undef, \&test_genlist6,       undef);
-# elm_list_item_append($li, "Checks",           undef, undef, \&test_check,          undef);
-# elm_list_item_append($li, "Radios",           undef, undef, \&test_radio,          undef);
+elm_list_item_append($li, "Checks",           undef, undef, \&test_check,          undef);
+elm_list_item_append($li, "Radios",           undef, undef, \&test_radio,          undef);
 elm_list_item_append($li, "Pager",         undef, undef, \&test_pager,     undef);
 elm_list_item_append($li, "Window States", undef, undef, \&test_win_state, undef);
 elm_list_item_append($li, "Progressbar",      undef, undef, \&test_progressbar,    undef);
 # TODO ...
 # elm_list_item_append($li, "File Selector",    undef, undef, \&test_fileselector,   undef);
-# elm_list_item_append($li, "Separator",        undef, undef, \&test_separator,      undef);
+elm_list_item_append($li, "Separator",        undef, undef, \&test_separator,      undef);
 # elm_list_item_append($li, "Scroller",         undef, undef, \&test_scroller,       undef);
-# elm_list_item_append($li, "Spinner",          undef, undef, \&test_spinner,        undef);
+elm_list_item_append($li, "Spinner",          undef, undef, \&test_spinner,        undef);
 # elm_list_item_append($li, "Index",            undef, undef, \&test_index,          undef);
 # elm_list_item_append($li, "Photocam",         undef, undef, \&test_photocam,       undef);
 # elm_list_item_append($li, "Photo",            undef, undef, \&test_photo,          undef);
@@ -1271,70 +1271,67 @@ sub test_notepad {
 }
 
 sub my_anchorview_bt {
-
-    #    Evas_Object *av = data;
-    #    elm_anchorview_hover_end(av);
+    my ($av) = @_;
+    elm_anchorview_hover_end($$av);
 }
 
 sub my_anchorview_anchor {
+    my ($data, $obj, $event_info) = @_;
 
-    #(void *data, Evas_Object *obj, void *event_info)
-    #    Evas_Object *av = data;
-    #    Elm_Entry_Anchorview_Info *ei = event_info;
-    #    Evas_Object *bt, *bx;
-    #
-    #    bt = elm_button_add(obj);
-    #    elm_button_label_set(bt, ei->name);
-    #    elm_hover_content_set(ei->hover, "middle", bt);
-    #    evas_object_show(bt);
-    #
-    #    // hints as to where we probably should put hover contents (buttons etc.).
-    #    if (ei->hover_top)
-    #      {
-    # 	bx = elm_box_add(obj);
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Top 1");
-    # 	elm_box_pack_end(bx, bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorview_bt, av);
-    # 	evas_object_show(bt);
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Top 2");
-    # 	elm_box_pack_end(bx, bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorview_bt, av);
-    # 	evas_object_show(bt);
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Top 3");
-    # 	elm_box_pack_end(bx, bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorview_bt, av);
-    # 	evas_object_show(bt);
-    # 	elm_hover_content_set(ei->hover, "top", bx);
-    # 	evas_object_show(bx);
-    #      }
-    #    if (ei->hover_bottom)
-    #      {
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Bot");
-    # 	elm_hover_content_set(ei->hover, "bottom", bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorview_bt, av);
-    # 	evas_object_show(bt);
-    #      }
-    #    if (ei->hover_left)
-    #      {
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Left");
-    # 	elm_hover_content_set(ei->hover, "left", bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorview_bt, av);
-    # 	evas_object_show(bt);
-    #      }
-    #    if (ei->hover_right)
-    #      {
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Right");
-    # 	elm_hover_content_set(ei->hover, "right", bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorview_bt, av);
-    # 	evas_object_show(bt);
-    #      }
+    my $av = $$data;
+    my $ei = $$event_info;
+
+    my ($bt, $bx);
+
+    $bt = elm_button_add($obj);
+    elm_button_label_set($bt, $ei->name);
+    elm_hover_content_set($ei->hover, "middle", $bt);
+    evas_object_show($bt);
+
+    # hints as to where we probably should put hover contents (buttons etc.).
+    if ($ei->hover_top) {
+        $bx = elm_box_add($obj);
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Top 1");
+        elm_box_pack_end($bx, $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorview_bt, \$av);
+        evas_object_show($bt);
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Top 2");
+        elm_box_pack_end($bx, $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorview_bt, \$av);
+        evas_object_show($bt);
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Top 3");
+        elm_box_pack_end($bx, $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorview_bt, \$av);
+        evas_object_show($bt);
+        elm_hover_content_set($ei->hover, "top", $bx);
+        evas_object_show($bx);
+    }
+    if ($ei->hover_bottom) {
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Bot");
+        elm_hover_content_set($ei->hover, "bottom", $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorview_bt, \$av);
+        evas_object_show($bt);
+    }
+    if ($ei->hover_left) {
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Left");
+        elm_hover_content_set($ei->hover, "left", $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorview_bt, \$av);
+        evas_object_show($bt);
+    }
+    if ($ei->hover_right) {
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Right");
+        elm_hover_content_set($ei->hover, "right", $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorview_bt, \$av);
+        evas_object_show($bt);
+    }
 }
+
 
 sub test_anchorview {
     my ($win, $bg, $av);
@@ -1372,69 +1369,67 @@ sub test_anchorview {
 }
 
 sub my_anchorblock_bt {
+    my ($data) = @_;
 
-    #    Evas_Object *av = data;
-    #    elm_anchorblock_hover_end(av);
+    elm_anchorblock_hover_end($$data);
 }
 
 sub my_anchorblock_anchor {
+    my ($data, $obj, $event_info) = @_;
 
-    #    Evas_Object *av = data;
-    #    Elm_Entry_Anchorblock_Info *ei = event_info;
-    #    Evas_Object *bt, *bx;
-    #
-    #    bt = elm_button_add(obj);
-    #    elm_button_label_set(bt, ei->name);
-    #    elm_hover_content_set(ei->hover, "middle", bt);
-    #    evas_object_show(bt);
-    #
-    #    // hints as to where we probably should put hover contents (buttons etc.).
-    #    if (ei->hover_top)
-    #      {
-    # 	bx = elm_box_add(obj);
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Top 1");
-    # 	elm_box_pack_end(bx, bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorblock_bt, av);
-    # 	evas_object_show(bt);
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Top 2");
-    # 	elm_box_pack_end(bx, bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorblock_bt, av);
-    # 	evas_object_show(bt);
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Top 3");
-    # 	elm_box_pack_end(bx, bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorblock_bt, av);
-    # 	evas_object_show(bt);
-    # 	elm_hover_content_set(ei->hover, "top", bx);
-    # 	evas_object_show(bx);
-    #      }
-    #    if (ei->hover_bottom)
-    #      {
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Bot");
-    # 	elm_hover_content_set(ei->hover, "bottom", bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorblock_bt, av);
-    # 	evas_object_show(bt);
-    #      }
-    #    if (ei->hover_left)
-    #      {
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Left");
-    # 	elm_hover_content_set(ei->hover, "left", bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorblock_bt, av);
-    # 	evas_object_show(bt);
-    #      }
-    #    if (ei->hover_right)
-    #      {
-    # 	bt = elm_button_add(obj);
-    # 	elm_button_label_set(bt, "Right");
-    # 	elm_hover_content_set(ei->hover, "right", bt);
-    # 	evas_object_smart_callback_add(bt, "clicked", my_anchorblock_bt, av);
-    # 	evas_object_show(bt);
-    #      }
+    my $av = $$data;
+    my $ei = $event_info;    #    Elm_Entry_Anchorblock_Info *ei = event_info;
+    my ($bt, $bx);
+
+    $bt = elm_button_add($obj);
+    elm_button_label_set($bt, ei->name);
+    elm_hover_content_set(ei->hover, "middle", $bt);
+    evas_object_show($bt);
+
+    # hints as to where we probably should put hover contents (buttons etc.).
+    if (ei->hover_top) {
+        $bx = elm_box_add($obj);
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Top 1");
+        elm_box_pack_end($bx, $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorblock_bt, \$av);
+        evas_object_show($bt);
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Top 2");
+        elm_box_pack_end($bx, $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorblock_bt, \$av);
+        evas_object_show($bt);
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Top 3");
+        elm_box_pack_end($bx, $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorblock_bt, \$av);
+        evas_object_show($bt);
+        elm_hover_content_set($ei->hover, "top", $bx);
+        evas_object_show($bx);
+    }
+    if (ei->hover_bottom) {
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Bot");
+        elm_hover_content_set($ei->hover, "bottom", $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorblock_bt, \$av);
+        evas_object_show($bt);
+    }
+    if (ei->hover_left) {
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Left");
+        elm_hover_content_set($ei->hover, "left", $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorblock_bt, \$av);
+        evas_object_show($bt);
+    }
+    if (ei->hover_right) {
+        $bt = elm_button_add($obj);
+        elm_button_label_set($bt, "Right");
+        elm_hover_content_set($ei->hover, "right", $bt);
+        evas_object_smart_callback_add($bt, "clicked", \&my_anchorblock_bt, \$av);
+        evas_object_show($bt);
+    }
 }
+
 
 sub my_anchorblock_edge_left {
     printf("left\n");
@@ -1453,12 +1448,13 @@ sub my_anchorblock_edge_bottom {
 }
 
 sub my_anchorblock_scroll {
+    my (undef, $obj) = @_;
 
-    #    Evas_Coord x, y, w, h, vw, vh;
-    #
-    #    elm_scroller_region_get(obj, &x, &y, &w, &h);
-    #    elm_scroller_child_size_get(obj, &vw, &vh);
-    #    printf("scroll %ix%i +%i+%i in %ix%i\n", w, h, x, y, vw, vh);
+    my ($x, $y, $w, $h, $vw, $vh);
+
+    elm_scroller_region_get($$obj, \$x, \$y, \$w, \$h);
+    elm_scroller_child_size_get($$obj, \$vw, \$vh);
+    printf("scroll %ix%i +%i+%i in %ix%i\n", $w, $h, $x, $y, $vw, $vh);
 }
 
 sub test_anchorblock {
@@ -1970,9 +1966,10 @@ sub my_li2_clear {
 }
 
 sub my_li2_sel {
+    my (undef, $obj) = @_;
 
-    #Elm_List_Item *it = elm_list_selected_item_get(obj);
-    #elm_list_item_selected_set(it, 0);
+    my $it = elm_list_selected_item_get($$obj);
+    elm_list_selected_time_set($it, 0);
     #   elm_list_item_selected_set(event_info, 0);
 }
 
@@ -4068,8 +4065,7 @@ sub my_progressbar_test_start
    elm_progressbar_pulse($_test_progressbar{pb7}, EINA_TRUE);
    if (!$_test_progressbar{run})
      {
-#        $_test_progressbar{timer} =
-            ecore_timer_add(0.1, \&_my_progressbar_value_set, undef);
+        $_test_progressbar{timer} = ecore_timer_add(0.1, \&_my_progressbar_value_set, undef);
         $_test_progressbar{run} = EINA_TRUE;
      }
 }
@@ -4081,7 +4077,7 @@ sub my_progressbar_test_stop
    elm_progressbar_pulse($_test_progressbar{pb7}, EINA_FALSE);
    if ($_test_progressbar{run})
      {
-        #ecore_timer_del($_test_progressbar{timer});
+        ecore_timer_del($_test_progressbar{timer});
         $_test_progressbar{run} = EINA_FALSE;
      }
 }
@@ -4090,7 +4086,7 @@ sub my_progressbar_destroy
 {
     my (undef, $obj) = @_;
    my_progressbar_test_stop(undef, undef, undef);
-#   evas_object_del($$obj);
+   evas_object_del($$obj);
 }
 
 sub test_progressbar
@@ -4226,11 +4222,8 @@ sub test_progressbar
    evas_object_show($win);
 }
 
-__END__
+=pod
 
-#endif
-#include <Elementary.h>
-#ifndef ELM_LIB_QUICKLAUNCH
 static void
 my_fileselector_done(void *data, Evas_Object *obj, void *event_info)
 {
@@ -4340,78 +4333,77 @@ test_fileselector(void *data, Evas_Object *obj, void *event_info)
 }
 #endif
 
-#include <Elementary.h>
-#ifndef ELM_LIB_QUICKLAUNCH
-void
-test_separator(void *data, Evas_Object *obj, void *event_info)
+=cut
+
+sub test_separator
 {
-   Evas_Object *win, *bg, *bx0, *bx, *bt, *sp;
-   char buf[PATH_MAX];
+   my ($win, $bg, $bx0, $bx, $bt, $sp);
 
-   win = elm_win_add(undef, "separators", ELM_WIN_BASIC);
-   elm_win_title_set(win, "Separators");
-   elm_win_autodel_set(win, 1);
+   $win = elm_win_add(undef, "separators", ELM_WIN_BASIC);
+   elm_win_title_set($win, "Separators");
+   elm_win_autodel_set($win, 1);
 
-   bg = elm_bg_add(win);
-   elm_win_resize_object_add(win, bg);
-   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(bg);
+   $bg = elm_bg_add($win);
+   elm_win_resize_object_add($win, $bg);
+   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($bg);
 
-   bx0 = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx0, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_horizontal_set(bx0, 1);
-   elm_win_resize_object_add(win, bx0);
-   evas_object_show(bx0);
+   $bx0 = elm_box_add($win);
+   evas_object_size_hint_weight_set($bx0, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_horizontal_set($bx0, 1);
+   elm_win_resize_object_add($win, $bx0);
+   evas_object_show($bx0);
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx0, bx);
-   evas_object_show(bx);
+   $bx = elm_box_add($win);
+   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx0, $bx);
+   evas_object_show($bx);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Left upper corner");
-   elm_box_pack_end(bx, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Left upper corner");
+   elm_box_pack_end($bx, $bt);
+   evas_object_show($bt);
 
-   sp = elm_separator_add(win);
-   elm_separator_horizontal_set(sp, 1); // by default, separator is vertical, we must set it horizontal
-   elm_box_pack_end(bx, sp);
-   evas_object_show(sp);
+   $sp = elm_separator_add($win);
+   elm_separator_horizontal_set($sp, 1); # by default, separator is vertical, we must set it horizontal
+   elm_box_pack_end($bx, $sp);
+   evas_object_show($sp);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Left lower corner");
-   elm_object_disabled_set(bt, 1);
-   elm_box_pack_end(bx, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Left lower corner");
+   elm_object_disabled_set($bt, 1);
+   elm_box_pack_end($bx, $bt);
+   evas_object_show($bt);
 
-   sp = elm_separator_add(win); // now we need vertical separator
-   elm_box_pack_end(bx0, sp);
-   evas_object_show(sp);
+   $sp = elm_separator_add($win); # now we need vertical separator
+   elm_box_pack_end($bx0, $sp);
+   evas_object_show($sp);
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx0, bx);
-   evas_object_show(bx);
+   $bx = elm_box_add($win);
+   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx0, $bx);
+   evas_object_show($bx);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Right upper corner");
-   elm_object_disabled_set(bt, 1);
-   elm_box_pack_end(bx, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Right upper corner");
+   elm_object_disabled_set($bt, 1);
+   elm_box_pack_end($bx, $bt);
+   evas_object_show($bt);
 
-   sp = elm_separator_add(win);
-   elm_separator_horizontal_set(sp, 1);
-   elm_box_pack_end(bx, sp);
-   evas_object_show(sp);
+   $sp = elm_separator_add($win);
+   elm_separator_horizontal_set($sp, 1);
+   elm_box_pack_end($bx, $sp);
+   evas_object_show($sp);
 
-   bt = elm_button_add(win);
-   elm_button_label_set(bt, "Right lower corner");
-   elm_box_pack_end(bx, bt);
-   evas_object_show(bt);
+   $bt = elm_button_add($win);
+   elm_button_label_set($bt, "Right lower corner");
+   elm_box_pack_end($bx, $bt);
+   evas_object_show($bt);
 
-   evas_object_show(win);
+   evas_object_show($win);
 }
-#endif
+
+=pod
 
 
 #include <Elementary.h>
@@ -4542,62 +4534,61 @@ test_scroller(void *data, Evas_Object *obj, void *event_info)
    evas_object_resize(win, 320, 320);
    evas_object_show(win);
 }
-#endif
 
-#include <Elementary.h>
-#ifndef ELM_LIB_QUICKLAUNCH
-void
-test_spinner(void *data, Evas_Object *obj, void *event_info)
+=cut
+
+sub test_spinner
 {
-   Evas_Object *win, *bg, *bx, *sp;
+   my ($win, $bg, $bx, $sp);
 
-   win = elm_win_add(undef, "spinner", ELM_WIN_BASIC);
-   elm_win_title_set(win, "Spinner");
-   elm_win_autodel_set(win, 1);
+   $win = elm_win_add(undef, "spinner", ELM_WIN_BASIC);
+   elm_win_title_set($win, "Spinner");
+   elm_win_autodel_set($win, 1);
 
-   bg = elm_bg_add(win);
-   elm_win_resize_object_add(win, bg);
-   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(bg);
+   $bg = elm_bg_add($win);
+   elm_win_resize_object_add($win, $bg);
+   evas_object_size_hint_weight_set($bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show($bg);
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_win_resize_object_add(win, bx);
-   evas_object_show(bx);
+   $bx = elm_box_add($win);
+   evas_object_size_hint_weight_set($bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add($win, $bx);
+   evas_object_show($bx);
 
-   sp = elm_spinner_add(win);
-   elm_spinner_label_format_set(sp, "%1.1f units");
-   elm_spinner_step_set(sp, 1.3);
-   elm_spinner_wrap_set(sp, 1);
-   elm_spinner_min_max_set(sp, -50.0, 250.0);
-   evas_object_size_hint_align_set(sp, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(sp, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx, sp);
-   evas_object_show(sp);
+   $sp = elm_spinner_add($win);
+   elm_spinner_label_format_set($sp, "%1.1f units");
+   elm_spinner_step_set($sp, 1.3);
+   elm_spinner_wrap_set($sp, 1);
+   elm_spinner_min_max_set($sp, -50.0, 250.0);
+   evas_object_size_hint_align_set($sp, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($sp, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx, $sp);
+   evas_object_show($sp);
 
-   sp = elm_spinner_add(win);
-   elm_spinner_label_format_set(sp, "%1.1f units");
-   elm_spinner_step_set(sp, 1.3);
-   elm_spinner_wrap_set(sp, 1);
-   elm_object_style_set (sp, "vertical");
-   elm_spinner_min_max_set(sp, -50.0, 250.0);
-   evas_object_size_hint_align_set(sp, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(sp, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx, sp);
-   evas_object_show(sp);
+   $sp = elm_spinner_add($win);
+   elm_spinner_label_format_set($sp, "%1.1f units");
+   elm_spinner_step_set($sp, 1.3);
+   elm_spinner_wrap_set($sp, 1);
+   elm_object_style_set ($sp, "vertical");
+   elm_spinner_min_max_set($sp, -50.0, 250.0);
+   evas_object_size_hint_align_set($sp, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($sp, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx, $sp);
+   evas_object_show($sp);
 
-   sp = elm_spinner_add(win);
-   elm_spinner_label_format_set(sp, "Disabled %.0f");
-   elm_object_disabled_set(sp, 1);
-   elm_spinner_min_max_set(sp, -50.0, 250.0);
-   evas_object_size_hint_align_set(sp, EVAS_HINT_FILL, 0.5);
-   evas_object_size_hint_weight_set(sp, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_pack_end(bx, sp);
-   evas_object_show(sp);
+   $sp = elm_spinner_add($win);
+   elm_spinner_label_format_set($sp, "Disabled %.0f");
+   elm_object_disabled_set($sp, 1);
+   elm_spinner_min_max_set($sp, -50.0, 250.0);
+   evas_object_size_hint_align_set($sp, EVAS_HINT_FILL, 0.5);
+   evas_object_size_hint_weight_set($sp, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_pack_end($bx, $sp);
+   evas_object_show($sp);
 
-   evas_object_show(win);
+   evas_object_show($win);
 }
-#endif
+
+__END__
 
 #include <Elementary.h>
 #ifndef ELM_LIB_QUICKLAUNCH

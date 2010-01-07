@@ -57,6 +57,7 @@ our @__constants = qw(
 
 our @__funcs = qw(
   ecore_timer_add
+  ecore_timer_del
 );
 
 our $VERSION    = '0.50';

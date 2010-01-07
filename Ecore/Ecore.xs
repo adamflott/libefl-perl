@@ -35,6 +35,9 @@ ecore_timer_add(in, func, data)
     OUTPUT:
         RETVAL
 
+void *
+ecore_timer_del(Ecore_Timer *timer)
+
 =pod
 
 #ifndef _ECORE_H

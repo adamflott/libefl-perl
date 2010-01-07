@@ -1591,7 +1591,12 @@ void
 elm_progressbar_value_set(Evas_Object *obj, double val)
 
 double
-elm_progressbar_value_get(const Evas_Object *obj)
+elm_progressbar_value_get(obj)
+    Evas_Object *obj
+    CODE:
+        RETVAL = elm_progressbar_value_get(obj);
+    OUTPUT:
+        RETVAL
 
 
 # separator
