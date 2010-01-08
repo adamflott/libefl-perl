@@ -1,10 +1,10 @@
 tmp/
 
-docs/warning.txt
-docs/see_also.pod
+docs/*
+examples/*
 
 .perlcriticrc
-core
+#core
 
 Elementary/common.c
 Elementary/common.h
