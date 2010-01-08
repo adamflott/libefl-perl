@@ -5,8 +5,6 @@ use warnings;
 
 use 5.10.0;
 
-use blib;
-
 use Getopt::Long ();
 
 my %opts;
