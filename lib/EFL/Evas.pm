@@ -7,8 +7,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
-our $VERSION = '0.50';
-$VERSION = eval $VERSION;    ## no critic
+our $VERSION = '0.501';
 our $XS_VERSION = $VERSION;
 
 use Carp;
@@ -679,7 +678,27 @@ include_file:docs/warning.txt
 
 =head1 EXPORTED API/CONSTANTS
 
-include_cmd:misc/supported-api.pl -header evas
+include_cmd:    misc/supported-api.pl -header evas
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc EFL::Evas
+
+You can also look for information at:
+
+=over
+
+=item * RT: CPAN's request tracker: L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=EFL>
+
+=item * AnnoCPAN: Annotated CPAN documentation: L<http://annocpan.org/dist/EFL>
+
+=item * CPAN Ratings: L<http://cpanratings.perl.org/d/EFL>
+
+=item * Search CPAN: L<http://search.cpan.org/dist/EFL>
+
+=back
 
 =head1 SEE ALSO
 
